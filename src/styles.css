@@ -152,3 +152,78 @@
     color: var(--color-foreground);
   }
 }
+
+/* Carrossel infinito de logos: P&B por padrão, colorido no hover */
+@keyframes logo-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.logo-marquee-track {
+  animation: logo-marquee 30s linear infinite;
+}
+
+.logo-marquee-item {
+  filter: grayscale(1);
+  transition: filter 0.3s ease;
+}
+
+.logo-marquee-item:hover {
+  filter: grayscale(0);
+}
+
+/* Balão de boas-vindas da Flafy */
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.85rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility brand-message {
+  animation: message-in 800ms ease-out both;
+}
+
+@keyframes wave-float {
+  0%,
+  100% {
+    transform: translateX(0) scaleY(1);
+  }
+  50% {
+    transform: translateX(0.5rem) scaleY(1.05);
+  }
+}
+
+@utility brand-wave {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: wave-float 9s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes caret-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@utility brand-caret {
+  animation: caret-blink 1s step-end infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-message,
+  .brand-wave,
+  .brand-caret {
+    animation: none;
+  }
+}
+

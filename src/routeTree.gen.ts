@@ -10,33 +10,324 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AvaliacoesRouteImport } from './routes/avaliacoes'
+import { Route as CadastroDesligamentoRouteImport } from './routes/cadastro-desligamento'
+import { Route as CatalogoRouteImport } from './routes/catalogo'
+import { Route as ColaboradoresRouteImport } from './routes/colaboradores'
+import { Route as ComunicadosRouteImport } from './routes/comunicados'
+import { Route as FeedbacksRouteImport } from './routes/feedbacks'
+import { Route as GamificacaoRouteImport } from './routes/gamificacao'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MapeamentoRiscosPsicossociaisRouteImport } from './routes/mapeamento-riscos-psicossociais'
+import { Route as MeuPerfilRouteImport } from './routes/meu-perfil'
+import { Route as OrganogramaRouteImport } from './routes/organograma'
+import { Route as PesquisaDesligamentoRouteImport } from './routes/pesquisa-desligamento'
+import { Route as PesquisaEngajamentoRouteImport } from './routes/pesquisa-engajamento'
+import { Route as PesquisaRapidaRouteImport } from './routes/pesquisa-rapida'
+import { Route as PesquisaSatisfacaoRouteImport } from './routes/pesquisa-satisfacao'
+import { Route as PlanosDesenvolvimentoRouteImport } from './routes/planos-desenvolvimento'
+import { Route as ProcessosSeletivosRouteImport } from './routes/processos-seletivos'
+import { Route as RelatoriosGeraisRouteImport } from './routes/relatorios-gerais'
+import { Route as Reunioes11RouteImport } from './routes/reunioes-1-1'
+import { Route as SuperPesquisaRouteImport } from './routes/super-pesquisa'
+import { Route as VagasRouteImport } from './routes/vagas'
+import { Route as ShopHistoricoRouteImport } from './routes/shop.historico'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AvaliacoesRoute = AvaliacoesRouteImport.update({
+  id: '/avaliacoes',
+  path: '/avaliacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastroDesligamentoRoute = CadastroDesligamentoRouteImport.update({
+  id: '/cadastro-desligamento',
+  path: '/cadastro-desligamento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogoRoute = CatalogoRouteImport.update({
+  id: '/catalogo',
+  path: '/catalogo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ColaboradoresRoute = ColaboradoresRouteImport.update({
+  id: '/colaboradores',
+  path: '/colaboradores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComunicadosRoute = ComunicadosRouteImport.update({
+  id: '/comunicados',
+  path: '/comunicados',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbacksRoute = FeedbacksRouteImport.update({
+  id: '/feedbacks',
+  path: '/feedbacks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GamificacaoRoute = GamificacaoRouteImport.update({
+  id: '/gamificacao',
+  path: '/gamificacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapeamentoRiscosPsicossociaisRoute =
+  MapeamentoRiscosPsicossociaisRouteImport.update({
+    id: '/mapeamento-riscos-psicossociais',
+    path: '/mapeamento-riscos-psicossociais',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const MeuPerfilRoute = MeuPerfilRouteImport.update({
+  id: '/meu-perfil',
+  path: '/meu-perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganogramaRoute = OrganogramaRouteImport.update({
+  id: '/organograma',
+  path: '/organograma',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PesquisaDesligamentoRoute = PesquisaDesligamentoRouteImport.update({
+  id: '/pesquisa-desligamento',
+  path: '/pesquisa-desligamento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PesquisaEngajamentoRoute = PesquisaEngajamentoRouteImport.update({
+  id: '/pesquisa-engajamento',
+  path: '/pesquisa-engajamento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PesquisaRapidaRoute = PesquisaRapidaRouteImport.update({
+  id: '/pesquisa-rapida',
+  path: '/pesquisa-rapida',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PesquisaSatisfacaoRoute = PesquisaSatisfacaoRouteImport.update({
+  id: '/pesquisa-satisfacao',
+  path: '/pesquisa-satisfacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanosDesenvolvimentoRoute = PlanosDesenvolvimentoRouteImport.update({
+  id: '/planos-desenvolvimento',
+  path: '/planos-desenvolvimento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProcessosSeletivosRoute = ProcessosSeletivosRouteImport.update({
+  id: '/processos-seletivos',
+  path: '/processos-seletivos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatoriosGeraisRoute = RelatoriosGeraisRouteImport.update({
+  id: '/relatorios-gerais',
+  path: '/relatorios-gerais',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Reunioes11Route = Reunioes11RouteImport.update({
+  id: '/reunioes-1-1',
+  path: '/reunioes-1-1',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuperPesquisaRoute = SuperPesquisaRouteImport.update({
+  id: '/super-pesquisa',
+  path: '/super-pesquisa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VagasRoute = VagasRouteImport.update({
+  id: '/vagas',
+  path: '/vagas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopHistoricoRoute = ShopHistoricoRouteImport.update({
+  id: '/shop/historico',
+  path: '/shop/historico',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/avaliacoes': typeof AvaliacoesRoute
+  '/cadastro-desligamento': typeof CadastroDesligamentoRoute
+  '/catalogo': typeof CatalogoRoute
+  '/colaboradores': typeof ColaboradoresRoute
+  '/comunicados': typeof ComunicadosRoute
+  '/feedbacks': typeof FeedbacksRoute
+  '/gamificacao': typeof GamificacaoRoute
+  '/login': typeof LoginRoute
+  '/mapeamento-riscos-psicossociais': typeof MapeamentoRiscosPsicossociaisRoute
+  '/meu-perfil': typeof MeuPerfilRoute
+  '/organograma': typeof OrganogramaRoute
+  '/pesquisa-desligamento': typeof PesquisaDesligamentoRoute
+  '/pesquisa-engajamento': typeof PesquisaEngajamentoRoute
+  '/pesquisa-rapida': typeof PesquisaRapidaRoute
+  '/pesquisa-satisfacao': typeof PesquisaSatisfacaoRoute
+  '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRoute
+  '/processos-seletivos': typeof ProcessosSeletivosRoute
+  '/relatorios-gerais': typeof RelatoriosGeraisRoute
+  '/reunioes-1-1': typeof Reunioes11Route
+  '/super-pesquisa': typeof SuperPesquisaRoute
+  '/vagas': typeof VagasRoute
+  '/shop/historico': typeof ShopHistoricoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/avaliacoes': typeof AvaliacoesRoute
+  '/cadastro-desligamento': typeof CadastroDesligamentoRoute
+  '/catalogo': typeof CatalogoRoute
+  '/colaboradores': typeof ColaboradoresRoute
+  '/comunicados': typeof ComunicadosRoute
+  '/feedbacks': typeof FeedbacksRoute
+  '/gamificacao': typeof GamificacaoRoute
+  '/login': typeof LoginRoute
+  '/mapeamento-riscos-psicossociais': typeof MapeamentoRiscosPsicossociaisRoute
+  '/meu-perfil': typeof MeuPerfilRoute
+  '/organograma': typeof OrganogramaRoute
+  '/pesquisa-desligamento': typeof PesquisaDesligamentoRoute
+  '/pesquisa-engajamento': typeof PesquisaEngajamentoRoute
+  '/pesquisa-rapida': typeof PesquisaRapidaRoute
+  '/pesquisa-satisfacao': typeof PesquisaSatisfacaoRoute
+  '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRoute
+  '/processos-seletivos': typeof ProcessosSeletivosRoute
+  '/relatorios-gerais': typeof RelatoriosGeraisRoute
+  '/reunioes-1-1': typeof Reunioes11Route
+  '/super-pesquisa': typeof SuperPesquisaRoute
+  '/vagas': typeof VagasRoute
+  '/shop/historico': typeof ShopHistoricoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/avaliacoes': typeof AvaliacoesRoute
+  '/cadastro-desligamento': typeof CadastroDesligamentoRoute
+  '/catalogo': typeof CatalogoRoute
+  '/colaboradores': typeof ColaboradoresRoute
+  '/comunicados': typeof ComunicadosRoute
+  '/feedbacks': typeof FeedbacksRoute
+  '/gamificacao': typeof GamificacaoRoute
+  '/login': typeof LoginRoute
+  '/mapeamento-riscos-psicossociais': typeof MapeamentoRiscosPsicossociaisRoute
+  '/meu-perfil': typeof MeuPerfilRoute
+  '/organograma': typeof OrganogramaRoute
+  '/pesquisa-desligamento': typeof PesquisaDesligamentoRoute
+  '/pesquisa-engajamento': typeof PesquisaEngajamentoRoute
+  '/pesquisa-rapida': typeof PesquisaRapidaRoute
+  '/pesquisa-satisfacao': typeof PesquisaSatisfacaoRoute
+  '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRoute
+  '/processos-seletivos': typeof ProcessosSeletivosRoute
+  '/relatorios-gerais': typeof RelatoriosGeraisRoute
+  '/reunioes-1-1': typeof Reunioes11Route
+  '/super-pesquisa': typeof SuperPesquisaRoute
+  '/vagas': typeof VagasRoute
+  '/shop/historico': typeof ShopHistoricoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/avaliacoes'
+    | '/cadastro-desligamento'
+    | '/catalogo'
+    | '/colaboradores'
+    | '/comunicados'
+    | '/feedbacks'
+    | '/gamificacao'
+    | '/login'
+    | '/mapeamento-riscos-psicossociais'
+    | '/meu-perfil'
+    | '/organograma'
+    | '/pesquisa-desligamento'
+    | '/pesquisa-engajamento'
+    | '/pesquisa-rapida'
+    | '/pesquisa-satisfacao'
+    | '/planos-desenvolvimento'
+    | '/processos-seletivos'
+    | '/relatorios-gerais'
+    | '/reunioes-1-1'
+    | '/super-pesquisa'
+    | '/vagas'
+    | '/shop/historico'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/avaliacoes'
+    | '/cadastro-desligamento'
+    | '/catalogo'
+    | '/colaboradores'
+    | '/comunicados'
+    | '/feedbacks'
+    | '/gamificacao'
+    | '/login'
+    | '/mapeamento-riscos-psicossociais'
+    | '/meu-perfil'
+    | '/organograma'
+    | '/pesquisa-desligamento'
+    | '/pesquisa-engajamento'
+    | '/pesquisa-rapida'
+    | '/pesquisa-satisfacao'
+    | '/planos-desenvolvimento'
+    | '/processos-seletivos'
+    | '/relatorios-gerais'
+    | '/reunioes-1-1'
+    | '/super-pesquisa'
+    | '/vagas'
+    | '/shop/historico'
+  id:
+    | '__root__'
+    | '/'
+    | '/avaliacoes'
+    | '/cadastro-desligamento'
+    | '/catalogo'
+    | '/colaboradores'
+    | '/comunicados'
+    | '/feedbacks'
+    | '/gamificacao'
+    | '/login'
+    | '/mapeamento-riscos-psicossociais'
+    | '/meu-perfil'
+    | '/organograma'
+    | '/pesquisa-desligamento'
+    | '/pesquisa-engajamento'
+    | '/pesquisa-rapida'
+    | '/pesquisa-satisfacao'
+    | '/planos-desenvolvimento'
+    | '/processos-seletivos'
+    | '/relatorios-gerais'
+    | '/reunioes-1-1'
+    | '/super-pesquisa'
+    | '/vagas'
+    | '/shop/historico'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AvaliacoesRoute: typeof AvaliacoesRoute
+  CadastroDesligamentoRoute: typeof CadastroDesligamentoRoute
+  CatalogoRoute: typeof CatalogoRoute
+  ColaboradoresRoute: typeof ColaboradoresRoute
+  ComunicadosRoute: typeof ComunicadosRoute
+  FeedbacksRoute: typeof FeedbacksRoute
+  GamificacaoRoute: typeof GamificacaoRoute
+  LoginRoute: typeof LoginRoute
+  MapeamentoRiscosPsicossociaisRoute: typeof MapeamentoRiscosPsicossociaisRoute
+  MeuPerfilRoute: typeof MeuPerfilRoute
+  OrganogramaRoute: typeof OrganogramaRoute
+  PesquisaDesligamentoRoute: typeof PesquisaDesligamentoRoute
+  PesquisaEngajamentoRoute: typeof PesquisaEngajamentoRoute
+  PesquisaRapidaRoute: typeof PesquisaRapidaRoute
+  PesquisaSatisfacaoRoute: typeof PesquisaSatisfacaoRoute
+  PlanosDesenvolvimentoRoute: typeof PlanosDesenvolvimentoRoute
+  ProcessosSeletivosRoute: typeof ProcessosSeletivosRoute
+  RelatoriosGeraisRoute: typeof RelatoriosGeraisRoute
+  Reunioes11Route: typeof Reunioes11Route
+  SuperPesquisaRoute: typeof SuperPesquisaRoute
+  VagasRoute: typeof VagasRoute
+  ShopHistoricoRoute: typeof ShopHistoricoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +339,187 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/avaliacoes': {
+      id: '/avaliacoes'
+      path: '/avaliacoes'
+      fullPath: '/avaliacoes'
+      preLoaderRoute: typeof AvaliacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadastro-desligamento': {
+      id: '/cadastro-desligamento'
+      path: '/cadastro-desligamento'
+      fullPath: '/cadastro-desligamento'
+      preLoaderRoute: typeof CadastroDesligamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalogo': {
+      id: '/catalogo'
+      path: '/catalogo'
+      fullPath: '/catalogo'
+      preLoaderRoute: typeof CatalogoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/colaboradores': {
+      id: '/colaboradores'
+      path: '/colaboradores'
+      fullPath: '/colaboradores'
+      preLoaderRoute: typeof ColaboradoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comunicados': {
+      id: '/comunicados'
+      path: '/comunicados'
+      fullPath: '/comunicados'
+      preLoaderRoute: typeof ComunicadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedbacks': {
+      id: '/feedbacks'
+      path: '/feedbacks'
+      fullPath: '/feedbacks'
+      preLoaderRoute: typeof FeedbacksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gamificacao': {
+      id: '/gamificacao'
+      path: '/gamificacao'
+      fullPath: '/gamificacao'
+      preLoaderRoute: typeof GamificacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mapeamento-riscos-psicossociais': {
+      id: '/mapeamento-riscos-psicossociais'
+      path: '/mapeamento-riscos-psicossociais'
+      fullPath: '/mapeamento-riscos-psicossociais'
+      preLoaderRoute: typeof MapeamentoRiscosPsicossociaisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meu-perfil': {
+      id: '/meu-perfil'
+      path: '/meu-perfil'
+      fullPath: '/meu-perfil'
+      preLoaderRoute: typeof MeuPerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organograma': {
+      id: '/organograma'
+      path: '/organograma'
+      fullPath: '/organograma'
+      preLoaderRoute: typeof OrganogramaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pesquisa-desligamento': {
+      id: '/pesquisa-desligamento'
+      path: '/pesquisa-desligamento'
+      fullPath: '/pesquisa-desligamento'
+      preLoaderRoute: typeof PesquisaDesligamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pesquisa-engajamento': {
+      id: '/pesquisa-engajamento'
+      path: '/pesquisa-engajamento'
+      fullPath: '/pesquisa-engajamento'
+      preLoaderRoute: typeof PesquisaEngajamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pesquisa-rapida': {
+      id: '/pesquisa-rapida'
+      path: '/pesquisa-rapida'
+      fullPath: '/pesquisa-rapida'
+      preLoaderRoute: typeof PesquisaRapidaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pesquisa-satisfacao': {
+      id: '/pesquisa-satisfacao'
+      path: '/pesquisa-satisfacao'
+      fullPath: '/pesquisa-satisfacao'
+      preLoaderRoute: typeof PesquisaSatisfacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planos-desenvolvimento': {
+      id: '/planos-desenvolvimento'
+      path: '/planos-desenvolvimento'
+      fullPath: '/planos-desenvolvimento'
+      preLoaderRoute: typeof PlanosDesenvolvimentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/processos-seletivos': {
+      id: '/processos-seletivos'
+      path: '/processos-seletivos'
+      fullPath: '/processos-seletivos'
+      preLoaderRoute: typeof ProcessosSeletivosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorios-gerais': {
+      id: '/relatorios-gerais'
+      path: '/relatorios-gerais'
+      fullPath: '/relatorios-gerais'
+      preLoaderRoute: typeof RelatoriosGeraisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reunioes-1-1': {
+      id: '/reunioes-1-1'
+      path: '/reunioes-1-1'
+      fullPath: '/reunioes-1-1'
+      preLoaderRoute: typeof Reunioes11RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/super-pesquisa': {
+      id: '/super-pesquisa'
+      path: '/super-pesquisa'
+      fullPath: '/super-pesquisa'
+      preLoaderRoute: typeof SuperPesquisaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vagas': {
+      id: '/vagas'
+      path: '/vagas'
+      fullPath: '/vagas'
+      preLoaderRoute: typeof VagasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/historico': {
+      id: '/shop/historico'
+      path: '/shop/historico'
+      fullPath: '/shop/historico'
+      preLoaderRoute: typeof ShopHistoricoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AvaliacoesRoute: AvaliacoesRoute,
+  CadastroDesligamentoRoute: CadastroDesligamentoRoute,
+  CatalogoRoute: CatalogoRoute,
+  ColaboradoresRoute: ColaboradoresRoute,
+  ComunicadosRoute: ComunicadosRoute,
+  FeedbacksRoute: FeedbacksRoute,
+  GamificacaoRoute: GamificacaoRoute,
+  LoginRoute: LoginRoute,
+  MapeamentoRiscosPsicossociaisRoute: MapeamentoRiscosPsicossociaisRoute,
+  MeuPerfilRoute: MeuPerfilRoute,
+  OrganogramaRoute: OrganogramaRoute,
+  PesquisaDesligamentoRoute: PesquisaDesligamentoRoute,
+  PesquisaEngajamentoRoute: PesquisaEngajamentoRoute,
+  PesquisaRapidaRoute: PesquisaRapidaRoute,
+  PesquisaSatisfacaoRoute: PesquisaSatisfacaoRoute,
+  PlanosDesenvolvimentoRoute: PlanosDesenvolvimentoRoute,
+  ProcessosSeletivosRoute: ProcessosSeletivosRoute,
+  RelatoriosGeraisRoute: RelatoriosGeraisRoute,
+  Reunioes11Route: Reunioes11Route,
+  SuperPesquisaRoute: SuperPesquisaRoute,
+  VagasRoute: VagasRoute,
+  ShopHistoricoRoute: ShopHistoricoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
