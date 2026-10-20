@@ -24,10 +24,32 @@ function LoginPage() {
   const [carregando, setCarregando] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
 
+  const [criarConta, setCriarConta] = useState(false);
+
   async function entrar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     setCarregando(true);
     setMensagem(null);
+    if (criarConta) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: senha,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      setCarregando(false);
+      if (error) {
+        setMensagem(error.message.includes("registered") ? "Este e-mail já tem conta." : "Não foi possível criar a conta. Use uma senha com pelo menos 6 caracteres.");
+        return;
+      }
+      if (!data.session) {
+        setMensagem("Conta criada! Confirme pelo link enviado ao seu e-mail e depois entre.");
+        setCriarConta(false);
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["usuario-logado"] });
+      navigate({ to: "/" });
+      return;
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
     setCarregando(false);
     if (error) {
