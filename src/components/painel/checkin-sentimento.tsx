@@ -1,7 +1,11 @@
 import { useState, type FormEvent } from "react";
+import { motion, type TargetAndTransition } from "framer-motion";
 
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
+import { registrarCheckin } from "@/lib/checkin-sentimento";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -16,6 +20,15 @@ export const EMOCOES_SENTIMENTO = [
 ] as const;
 
 export type EmocaoSentimento = (typeof EMOCOES_SENTIMENTO)[number]["id"];
+
+// Animação ao passar o mouse: a carinha triste treme e chora, a feliz pula e ri.
+const ANIMACAO_HOVER: Record<EmocaoSentimento, TargetAndTransition> = {
+  muito_triste: { rotate: [0, -8, 8, 0], y: [0, 2, 0], transition: { duration: 0.9, repeat: Infinity, ease: "easeInOut" } },
+  triste: { rotate: [0, -5, 5, 0], y: [0, 3, 0], transition: { duration: 1.2, repeat: Infinity, ease: "easeInOut" } },
+  neutro: { rotate: [0, -4, 4, 0], transition: { duration: 1.6, repeat: Infinity, ease: "easeInOut" } },
+  feliz: { y: [0, -10, 0], transition: { duration: 0.8, repeat: Infinity, ease: "easeInOut" } },
+  muito_feliz: { y: [0, -14, 0], rotate: [0, -6, 6, 0], transition: { duration: 1, repeat: Infinity, ease: "easeInOut" } },
+};
 
 const TITULO_CHECKIN = "checkin-sentimento-titulo";
 const ID_MOTIVO = "checkin-sentimento-motivo";
@@ -61,7 +74,7 @@ function SeletorEmocoes({
       {EMOCOES_SENTIMENTO.map((emocao) => {
         const selecionado = valor === emocao.id;
         return (
-          <button
+          <motion.button
             key={emocao.id}
             type="button"
             role="radio"
@@ -70,23 +83,62 @@ function SeletorEmocoes({
             title={emocao.rotulo}
             disabled={desabilitado}
             onClick={() => onChange(emocao.id)}
+            animate={{ scale: selecionado ? 1.05 : 1 }}
+            whileHover={{ y: -6, scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 22 }}
             className={cn(
-              "group flex aspect-square w-full items-center justify-center rounded-2xl border-2 bg-card p-3 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
-              selecionado
-                ? "scale-105 border-brand bg-brand/10 shadow-lg"
-                : "border-border hover:-translate-y-1.5 hover:scale-110 hover:border-brand/60 hover:bg-muted/50 hover:shadow-xl active:scale-95",
+              "group flex aspect-square w-full items-center justify-center rounded-2xl border-2 bg-card p-3 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
+              selecionado ? "border-brand bg-brand/10 shadow-lg" : "border-border hover:border-brand/60 hover:bg-muted/50 hover:shadow-xl",
             )}
           >
-            <img
+            <motion.img
               src={emocao.imagem}
               alt=""
               aria-hidden="true"
-              className="h-auto w-full max-w-[4.8rem] object-contain transition-transform duration-200 group-hover:scale-110 group-hover:-rotate-3 sm:max-w-[5.6rem]"
+              whileHover={ANIMACAO_HOVER[emocao.id]}
+              className="h-auto w-full max-w-[4.8rem] object-contain sm:max-w-[5.6rem]"
             />
-          </button>
+          </motion.button>
         );
       })}
     </div>
+  );
+}
+
+// Check verde animado: o círculo e o traço se desenham, e a cada 5 segundos o ícone pulsa.
+function CheckSucesso() {
+  return (
+    <motion.svg
+      viewBox="0 0 64 64"
+      className="size-16 text-emerald-500"
+      aria-hidden="true"
+      animate={{ scale: [1, 1.12, 1] }}
+      transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 4.4, ease: "easeInOut" }}
+    >
+      <motion.circle
+        cx="32"
+        cy="32"
+        r="28"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="4"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      />
+      <motion.path
+        d="M20 33 L28 41 L44 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 0.5, delay: 0.7, ease: "easeOut" }}
+      />
+    </motion.svg>
   );
 }
 
@@ -98,9 +150,15 @@ export function CheckinSentimento({ onEnviar }: { onEnviar?: (checkin: CheckinEn
   const restantes = LIMITE_MOTIVO - motivo.length;
   const temEmocaoSelecionada = emocao !== null;
 
-  function enviar(event: FormEvent<HTMLFormElement>) {
+  async function enviar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!emocao) return;
+    try {
+      await registrarCheckin(emocao, motivo.trim());
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível registrar o sentimento.");
+      return;
+    }
     onEnviar?.({ emocao, motivo: motivo.trim() });
     setEnviado(true);
   }
@@ -108,13 +166,14 @@ export function CheckinSentimento({ onEnviar }: { onEnviar?: (checkin: CheckinEn
   return (
     <section aria-label="Check-in de sentimento" className="mt-10 w-full">
       <div className="rounded-2xl bg-panel p-6">
-        <CabecalhoCheckin />
-
         {enviado ? (
-          <p className="mt-8 text-center text-sm font-medium text-foreground">
-            Sentimento registrado. Obrigado por compartilhar!
-          </p>
+          <div className="flex flex-col items-center gap-3 py-10">
+            <CheckSucesso />
+            <p className="text-center font-display text-2xl font-bold text-emerald-500">Nenhuma Pendência!!</p>
+          </div>
         ) : (
+          <>
+          <CabecalhoCheckin />
           <form className="mt-10 flex flex-col gap-5" onSubmit={enviar}>
             <SeletorEmocoes valor={emocao} onChange={setEmocao} desabilitado={false} />
 
@@ -155,6 +214,7 @@ export function CheckinSentimento({ onEnviar }: { onEnviar?: (checkin: CheckinEn
               </Button>
             </div>
           </form>
+          </>
         )}
       </div>
     </section>

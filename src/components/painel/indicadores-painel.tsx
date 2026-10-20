@@ -8,9 +8,9 @@ const CARD = "flex h-[230px] w-[280px] shrink-0 flex-col rounded-2xl border bord
 
 const COMPETENCIAS = [
   { id: "proatividade-autonomia", rotulo: "Proatividade e Autonomia", valor: 70, cor: "bg-destructive" },
-  { id: "confiabilidade-transparencia", rotulo: "Confiabilidade e Transparência", valor: 50, cor: "bg-accent-yellow" },
+  { id: "confiabilidade-transparencia", rotulo: "Confiabilidade e Transparência", valor: 50, cor: "bg-emerald-500" },
   { id: "encantamento-cliente", rotulo: "Encantamento e Foco no Cliente", valor: 20, cor: "bg-brand" },
-  { id: "responsabilidade-produtividade", rotulo: "Responsabilidade e Produtividade", valor: 60, cor: "bg-accent-orange" },
+  { id: "responsabilidade-produtividade", rotulo: "Responsabilidade e Produtividade", valor: 60, cor: "bg-blue-600" },
 ] as const;
 
 const TITULO_ATIVIDADES = "atividades-painel-titulo";

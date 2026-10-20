@@ -30,6 +30,8 @@ const BANNER_HEIGHT = 344;
 const logos = [
   { src: "/images/logo-academy.png", alt: "Academy" },
   { src: "/images/logo-solucoes-marketing.png", alt: "Soluções de Marketing" },
+  { src: "/images/logo-solutions.webp", alt: "Solutions" },
+  { src: "/images/logo-grupo-orcoma.png", alt: "Grupo Orcoma" },
 ];
 // Repete os logos o suficiente para a metade do trilho cobrir a largura da tela
 const logoGroup = Array.from({ length: 4 }, () => logos).flat();
@@ -67,6 +69,7 @@ function Index() {
                 src={logo.src}
                 alt={i < logoGroup.length ? logo.alt : ""}
                 aria-hidden={i >= logoGroup.length || undefined}
+                decoding="async"
                 className="logo-marquee-item mx-10 h-16 w-auto shrink-0 object-contain"
               />
             ))}

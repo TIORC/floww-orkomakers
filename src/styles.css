@@ -151,6 +151,29 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+
+  /* Barras de rolagem em amarelo (marca), inclusive nas listas suspensas. */
+  * {
+    scrollbar-color: var(--brand) transparent;
+  }
+}
+
+/* Reflexo leve que percorre o pódio do ranking (desligado se o usuário preferir menos movimento) */
+@keyframes podio-reflexo {
+  from { transform: translateX(0); }
+  to { transform: translateX(140px); }
+}
+
+.podio-reflexo {
+  animation: podio-reflexo 5s ease-in-out infinite;
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .podio-reflexo {
+    animation: none;
+    display: none;
+  }
 }
 
 /* Carrossel infinito de logos: P&B por padrão, colorido no hover */
@@ -161,11 +184,19 @@
 
 .logo-marquee-track {
   animation: logo-marquee 30s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+.logo-marquee {
+  contain: layout paint;
 }
 
 .logo-marquee-item {
   filter: grayscale(1);
   transition: filter 0.3s ease;
+  backface-visibility: hidden;
 }
 
 .logo-marquee-item:hover {

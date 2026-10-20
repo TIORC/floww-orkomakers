@@ -1,34 +1,42 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { useState } from "react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { BriefcaseBusiness, Plus } from "lucide-react";
 
-import { PainelSidebar } from "@/components/painel/painel-sidebar";
 import { PerfilFlutuante } from "@/components/perfil-flutuante";
-import { cn } from "@/lib/utils";
+import { PainelSidebar } from "@/components/painel/painel-sidebar";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { AbrirVagaDialog } from "@/components/vagas/abrir-vaga-dialog";
 
-export const Route = createFileRoute("/vagas")({
-  head: () => ({
-    meta: [{ title: "Vagas — Orcoma Orkomakers" }],
-  }),
-  component: VagasPage,
-});
+type SetorVagas = { id: number; nome: string; vagas: number };
 
-const ABAS = ["Abertas", "Fechadas"] as const;
-type Aba = (typeof ABAS)[number];
+const SETORES_DEMONSTRATIVOS: SetorVagas[] = [
+  { id: 1, nome: "Tecnologia", vagas: 8 },
+  { id: 2, nome: "Recursos Humanos", vagas: 4 },
+  { id: 3, nome: "Comercial", vagas: 6 },
+  { id: 4, nome: "Marketing", vagas: 3 },
+  { id: 5, nome: "Financeiro", vagas: 2 },
+];
 
-// Sem dados por enquanto: as vagas chegam da fonte real depois.
-const VAGAS: never[] = [];
+export const Route = createFileRoute("/vagas")({ component: VagasPage });
 
 function VagasVazias({ fechadas }: { fechadas: boolean }) {
   return (
     <div className="flex min-h-[24rem] flex-col items-center justify-center px-6 py-12 text-center">
-      <div className="mb-6 grid size-36 place-items-center rounded-[2rem] bg-brand/10 text-brand sm:size-44">
+      <motion.div
+        animate={{ y: [0, -10, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        className="mb-6 grid size-36 place-items-center rounded-[2rem] bg-primary/5 text-primary/75 sm:size-44"
+      >
         <BriefcaseBusiness className="size-20 sm:size-24" strokeWidth={1.2} aria-hidden />
-      </div>
-      <h2 className="font-display text-lg font-semibold text-white">
+      </motion.div>
+      <h2 className="font-display text-lg font-semibold text-amber-500">
         {fechadas ? "Nenhuma vaga fechada" : "Nenhuma vaga aberta"}
       </h2>
-      <p className="mt-2 max-w-md text-sm text-white/80">
+      <p className="mt-2 max-w-md text-sm text-muted-foreground">
         {fechadas
           ? "As vagas encerradas aparecerão aqui."
           : "As oportunidades disponíveis para candidatura aparecerão aqui."}
@@ -38,49 +46,91 @@ function VagasVazias({ fechadas }: { fechadas: boolean }) {
 }
 
 function VagasPage() {
-  const [aba, setAba] = useState<Aba>("Abertas");
+  const [abrirVagaAberto, setAbrirVagaAberto] = useState(false);
 
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
       <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
-        <section className="min-h-[34rem] rounded-2xl border border-panel-active bg-panel p-6 sm:p-8">
-          <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="font-display text-3xl font-semibold text-white">Vagas</h1>
-              <p className="mt-2 max-w-2xl text-sm text-white/80">
+        <PerfilFlutuante />
+        <Card className="min-h-[34rem] rounded-2xl shadow-sm">
+          <CardContent className="p-6 sm:p-8">
+            <motion.header
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 26 }}
+              className="mb-8 flex flex-wrap items-start justify-between gap-4"
+            >
+              <div>
+              <h1 className="font-display text-3xl font-semibold text-amber-500">Vagas</h1>
+              <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
                 Consulte as oportunidades abertas e as vagas já encerradas.
               </p>
-            </div>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-900 shadow transition hover:brightness-110"
+              </div>
+              <Button type="button" onClick={() => setAbrirVagaAberto(true)} className="rounded-full bg-brand text-slate-900 shadow hover:bg-brand/90 hover:text-slate-900">
+                <Plus className="size-4" aria-hidden />
+                Abrir vaga
+              </Button>
+            </motion.header>
+            <Tabs defaultValue="abertas" className="w-full">
+              <TabsList className="h-auto w-full justify-start gap-2 rounded-none border-b border-border bg-transparent p-0">
+                <TabsTrigger
+                  value="abertas"
+                  className="rounded-t-md rounded-b-none border border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary data-[state=active]:shadow-none"
+                >
+                  Abertas
+                </TabsTrigger>
+                <TabsTrigger
+                  value="fechadas"
+                  className="rounded-t-md rounded-b-none border border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary data-[state=active]:shadow-none"
+                >
+                  Fechadas
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="abertas" className="mt-0">
+                <VagasVazias fechadas={false} />
+              </TabsContent>
+              <TabsContent value="fechadas" className="mt-0">
+                <VagasVazias fechadas />
+              </TabsContent>
+            </Tabs>
+
+            <motion.section
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 240, damping: 26 }}
+              className="mt-8 border-t border-border pt-8"
+              aria-labelledby="vagas-setor-title"
             >
-              <Plus className="size-4" aria-hidden />
-              Abrir vaga
-            </button>
-          </header>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 id="vagas-setor-title" className="font-display text-xl font-semibold text-amber-500">
+                    Vagas abertas por setor
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Visão demonstrativa da distribuição de vagas abertas por setor.
+                  </p>
+                </div>
+              </div>
 
-          <div role="tablist" className="flex gap-2 border-b border-panel-active">
-            {ABAS.map((item) => (
-              <button
-                key={item}
-                type="button"
-                role="tab"
-                aria-selected={aba === item}
-                onClick={() => setAba(item)}
-                className={cn(
-                  "-mb-px rounded-t-md border border-b-0 px-4 py-3 text-sm font-semibold transition",
-                  aba === item ? "border-brand bg-brand/10 text-brand" : "border-transparent text-white/80 hover:text-white",
-                )}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
+              <div className="mt-6">
+                <div className="h-80 w-full rounded-xl border border-border bg-card p-4" role="img" aria-label="Gráfico de vagas abertas por setor">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={SETORES_DEMONSTRATIVOS} layout="vertical" margin={{ top: 8, right: 20, bottom: 8, left: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                      <XAxis type="number" allowDecimals={false} axisLine={false} tickLine={false} />
+                      <YAxis dataKey="nome" type="category" width={130} axisLine={false} tickLine={false} />
+                      <Tooltip formatter={(value) => [`${value} vagas`, "Abertas"]} />
+                      <Bar dataKey="vagas" name="Vagas abertas" fill="#fbbf24" radius={[0, 6, 6, 0]} barSize={24} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
 
-          {VAGAS.length === 0 ? <VagasVazias fechadas={aba === "Fechadas"} /> : null}
-        </section>
+              </div>
+            </motion.section>
+          </CardContent>
+        </Card>
+        <AbrirVagaDialog open={abrirVagaAberto} onOpenChange={setAbrirVagaAberto} />
       </main>
     </div>
   );

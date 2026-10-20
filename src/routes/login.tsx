@@ -1,7 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { Eye, EyeOff, Rocket } from "lucide-react";
+import { motion } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -53,13 +54,51 @@ function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen w-full items-center justify-center bg-background p-6">
+    <main className="relative flex min-h-screen w-full justify-center overflow-hidden bg-background p-6">
+      {/* Fundo animado: bolhas de luz suaves que flutuam devagar atrás do card. */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 -top-24 size-[30rem] rounded-full bg-amber-400/40 blur-3xl"
+        animate={{ x: [0, 120, -60, 0], y: [0, 90, 30, 0], scale: [1, 1.15, 0.95, 1] }}
+        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 right-0 size-[34rem] rounded-full bg-blue-500/45 blur-3xl"
+        animate={{ x: [0, -120, 40, 0], y: [0, -70, 20, 0], scale: [1, 0.9, 1.1, 1] }}
+        transition={{ duration: 17, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute left-1/3 top-1/4 size-96 rounded-full bg-emerald-400/30 blur-3xl"
+        animate={{ x: [0, 90, -70, 0], y: [0, -60, 50, 0] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {/* Marca no espaço da direita: mascote flutuando e logo do grupo logo abaixo. */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 flex-col items-center justify-center gap-2 lg:flex">
+        <motion.img
+          src="/images/mascote-leao.png"
+          alt=""
+          aria-hidden
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: [0, -12, 0] }}
+          transition={{ opacity: { duration: 0.8 }, y: { duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.8 } }}
+          className="w-96 object-contain drop-shadow-2xl"
+          style={{ maskImage: "linear-gradient(to bottom, black 70%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent 100%)" }}
+        />
+        <motion.img
+          src="/images/logo-grupo-orcoma-branca.png"
+          alt="Grupo Orcoma"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 0.9, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.5, ease: "easeOut" }}
+          className="-mt-14 w-80 object-contain"
+        />
+      </div>
+      <div className="relative z-10 flex min-h-screen w-full max-w-[1400px] items-center justify-start pl-10">
       <section className="w-full max-w-md rounded-2xl border border-panel-active bg-panel p-8 shadow-2xl sm:p-10">
         <div className="text-center">
-          <p className="flex items-center justify-center gap-2 font-display text-2xl font-extrabold text-white">
-            Orcoma <span className="flex items-center gap-1 text-brand"><Rocket className="size-5" aria-hidden /> Orkomakers</span>
-          </p>
-          <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-white/60">Painel</p>
+          <img src="/images/logo-academy.png" alt="Orcoma Orkomakers Academy" className="mx-auto h-16 w-auto object-contain" />
         </div>
 
         <form onSubmit={entrar} className="mt-8">
@@ -105,11 +144,11 @@ function LoginPage() {
             </button>
           </div>
 
-          <div className="mt-4 flex justify-end">
+          <div className="mt-4 flex justify-center">
             <button
               type="button"
               onClick={esqueciSenha}
-              className="text-sm font-medium text-white underline decoration-brand/60 decoration-2 underline-offset-4 transition hover:decoration-brand"
+              className="text-sm font-medium text-brand transition hover:brightness-110"
             >
               Esqueci a minha senha
             </button>
@@ -130,6 +169,7 @@ function LoginPage() {
           <p className="mt-6 text-center text-xs text-white/60">Acesso restrito a colaboradores</p>
         </form>
       </section>
+      </div>
     </main>
   );
 }

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AvaliacoesRouteImport } from './routes/avaliacoes'
 import { Route as CadastroDesligamentoRouteImport } from './routes/cadastro-desligamento'
+import { Route as CargosSalariosRouteImport } from './routes/cargos-salarios'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as ColaboradoresRouteImport } from './routes/colaboradores'
 import { Route as ComunicadosRouteImport } from './routes/comunicados'
@@ -29,8 +30,11 @@ import { Route as PlanosDesenvolvimentoRouteImport } from './routes/planos-desen
 import { Route as ProcessosSeletivosRouteImport } from './routes/processos-seletivos'
 import { Route as RelatoriosGeraisRouteImport } from './routes/relatorios-gerais'
 import { Route as Reunioes11RouteImport } from './routes/reunioes-1-1'
+import { Route as SetoresRouteImport } from './routes/setores'
 import { Route as SuperPesquisaRouteImport } from './routes/super-pesquisa'
 import { Route as VagasRouteImport } from './routes/vagas'
+import { Route as GamificacaoHistoricoRouteImport } from './routes/gamificacao.historico'
+import { Route as PlanosDesenvolvimentoGestaoRouteImport } from './routes/planos-desenvolvimento.gestao'
 import { Route as ShopHistoricoRouteImport } from './routes/shop.historico'
 
 const IndexRoute = IndexRouteImport.update({
@@ -46,6 +50,11 @@ const AvaliacoesRoute = AvaliacoesRouteImport.update({
 const CadastroDesligamentoRoute = CadastroDesligamentoRouteImport.update({
   id: '/cadastro-desligamento',
   path: '/cadastro-desligamento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CargosSalariosRoute = CargosSalariosRouteImport.update({
+  id: '/cargos-salarios',
+  path: '/cargos-salarios',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogoRoute = CatalogoRouteImport.update({
@@ -134,6 +143,11 @@ const Reunioes11Route = Reunioes11RouteImport.update({
   path: '/reunioes-1-1',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SetoresRoute = SetoresRouteImport.update({
+  id: '/setores',
+  path: '/setores',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SuperPesquisaRoute = SuperPesquisaRouteImport.update({
   id: '/super-pesquisa',
   path: '/super-pesquisa',
@@ -144,6 +158,17 @@ const VagasRoute = VagasRouteImport.update({
   path: '/vagas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamificacaoHistoricoRoute = GamificacaoHistoricoRouteImport.update({
+  id: '/historico',
+  path: '/historico',
+  getParentRoute: () => GamificacaoRoute,
+} as any)
+const PlanosDesenvolvimentoGestaoRoute =
+  PlanosDesenvolvimentoGestaoRouteImport.update({
+    id: '/gestao',
+    path: '/gestao',
+    getParentRoute: () => PlanosDesenvolvimentoRoute,
+  } as any)
 const ShopHistoricoRoute = ShopHistoricoRouteImport.update({
   id: '/shop/historico',
   path: '/shop/historico',
@@ -154,11 +179,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/avaliacoes': typeof AvaliacoesRoute
   '/cadastro-desligamento': typeof CadastroDesligamentoRoute
+  '/cargos-salarios': typeof CargosSalariosRoute
   '/catalogo': typeof CatalogoRoute
   '/colaboradores': typeof ColaboradoresRoute
   '/comunicados': typeof ComunicadosRoute
   '/feedbacks': typeof FeedbacksRoute
-  '/gamificacao': typeof GamificacaoRoute
+  '/gamificacao': typeof GamificacaoRouteWithChildren
   '/login': typeof LoginRoute
   '/mapeamento-riscos-psicossociais': typeof MapeamentoRiscosPsicossociaisRoute
   '/meu-perfil': typeof MeuPerfilRoute
@@ -167,23 +193,27 @@ export interface FileRoutesByFullPath {
   '/pesquisa-engajamento': typeof PesquisaEngajamentoRoute
   '/pesquisa-rapida': typeof PesquisaRapidaRoute
   '/pesquisa-satisfacao': typeof PesquisaSatisfacaoRoute
-  '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRoute
+  '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRouteWithChildren
   '/processos-seletivos': typeof ProcessosSeletivosRoute
   '/relatorios-gerais': typeof RelatoriosGeraisRoute
   '/reunioes-1-1': typeof Reunioes11Route
+  '/setores': typeof SetoresRoute
   '/super-pesquisa': typeof SuperPesquisaRoute
   '/vagas': typeof VagasRoute
+  '/gamificacao/historico': typeof GamificacaoHistoricoRoute
+  '/planos-desenvolvimento/gestao': typeof PlanosDesenvolvimentoGestaoRoute
   '/shop/historico': typeof ShopHistoricoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/avaliacoes': typeof AvaliacoesRoute
   '/cadastro-desligamento': typeof CadastroDesligamentoRoute
+  '/cargos-salarios': typeof CargosSalariosRoute
   '/catalogo': typeof CatalogoRoute
   '/colaboradores': typeof ColaboradoresRoute
   '/comunicados': typeof ComunicadosRoute
   '/feedbacks': typeof FeedbacksRoute
-  '/gamificacao': typeof GamificacaoRoute
+  '/gamificacao': typeof GamificacaoRouteWithChildren
   '/login': typeof LoginRoute
   '/mapeamento-riscos-psicossociais': typeof MapeamentoRiscosPsicossociaisRoute
   '/meu-perfil': typeof MeuPerfilRoute
@@ -192,12 +222,15 @@ export interface FileRoutesByTo {
   '/pesquisa-engajamento': typeof PesquisaEngajamentoRoute
   '/pesquisa-rapida': typeof PesquisaRapidaRoute
   '/pesquisa-satisfacao': typeof PesquisaSatisfacaoRoute
-  '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRoute
+  '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRouteWithChildren
   '/processos-seletivos': typeof ProcessosSeletivosRoute
   '/relatorios-gerais': typeof RelatoriosGeraisRoute
   '/reunioes-1-1': typeof Reunioes11Route
+  '/setores': typeof SetoresRoute
   '/super-pesquisa': typeof SuperPesquisaRoute
   '/vagas': typeof VagasRoute
+  '/gamificacao/historico': typeof GamificacaoHistoricoRoute
+  '/planos-desenvolvimento/gestao': typeof PlanosDesenvolvimentoGestaoRoute
   '/shop/historico': typeof ShopHistoricoRoute
 }
 export interface FileRoutesById {
@@ -205,11 +238,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/avaliacoes': typeof AvaliacoesRoute
   '/cadastro-desligamento': typeof CadastroDesligamentoRoute
+  '/cargos-salarios': typeof CargosSalariosRoute
   '/catalogo': typeof CatalogoRoute
   '/colaboradores': typeof ColaboradoresRoute
   '/comunicados': typeof ComunicadosRoute
   '/feedbacks': typeof FeedbacksRoute
-  '/gamificacao': typeof GamificacaoRoute
+  '/gamificacao': typeof GamificacaoRouteWithChildren
   '/login': typeof LoginRoute
   '/mapeamento-riscos-psicossociais': typeof MapeamentoRiscosPsicossociaisRoute
   '/meu-perfil': typeof MeuPerfilRoute
@@ -218,12 +252,15 @@ export interface FileRoutesById {
   '/pesquisa-engajamento': typeof PesquisaEngajamentoRoute
   '/pesquisa-rapida': typeof PesquisaRapidaRoute
   '/pesquisa-satisfacao': typeof PesquisaSatisfacaoRoute
-  '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRoute
+  '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRouteWithChildren
   '/processos-seletivos': typeof ProcessosSeletivosRoute
   '/relatorios-gerais': typeof RelatoriosGeraisRoute
   '/reunioes-1-1': typeof Reunioes11Route
+  '/setores': typeof SetoresRoute
   '/super-pesquisa': typeof SuperPesquisaRoute
   '/vagas': typeof VagasRoute
+  '/gamificacao/historico': typeof GamificacaoHistoricoRoute
+  '/planos-desenvolvimento/gestao': typeof PlanosDesenvolvimentoGestaoRoute
   '/shop/historico': typeof ShopHistoricoRoute
 }
 export interface FileRouteTypes {
@@ -232,6 +269,7 @@ export interface FileRouteTypes {
     | '/'
     | '/avaliacoes'
     | '/cadastro-desligamento'
+    | '/cargos-salarios'
     | '/catalogo'
     | '/colaboradores'
     | '/comunicados'
@@ -249,14 +287,18 @@ export interface FileRouteTypes {
     | '/processos-seletivos'
     | '/relatorios-gerais'
     | '/reunioes-1-1'
+    | '/setores'
     | '/super-pesquisa'
     | '/vagas'
+    | '/gamificacao/historico'
+    | '/planos-desenvolvimento/gestao'
     | '/shop/historico'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/avaliacoes'
     | '/cadastro-desligamento'
+    | '/cargos-salarios'
     | '/catalogo'
     | '/colaboradores'
     | '/comunicados'
@@ -274,14 +316,18 @@ export interface FileRouteTypes {
     | '/processos-seletivos'
     | '/relatorios-gerais'
     | '/reunioes-1-1'
+    | '/setores'
     | '/super-pesquisa'
     | '/vagas'
+    | '/gamificacao/historico'
+    | '/planos-desenvolvimento/gestao'
     | '/shop/historico'
   id:
     | '__root__'
     | '/'
     | '/avaliacoes'
     | '/cadastro-desligamento'
+    | '/cargos-salarios'
     | '/catalogo'
     | '/colaboradores'
     | '/comunicados'
@@ -299,8 +345,11 @@ export interface FileRouteTypes {
     | '/processos-seletivos'
     | '/relatorios-gerais'
     | '/reunioes-1-1'
+    | '/setores'
     | '/super-pesquisa'
     | '/vagas'
+    | '/gamificacao/historico'
+    | '/planos-desenvolvimento/gestao'
     | '/shop/historico'
   fileRoutesById: FileRoutesById
 }
@@ -308,11 +357,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AvaliacoesRoute: typeof AvaliacoesRoute
   CadastroDesligamentoRoute: typeof CadastroDesligamentoRoute
+  CargosSalariosRoute: typeof CargosSalariosRoute
   CatalogoRoute: typeof CatalogoRoute
   ColaboradoresRoute: typeof ColaboradoresRoute
   ComunicadosRoute: typeof ComunicadosRoute
   FeedbacksRoute: typeof FeedbacksRoute
-  GamificacaoRoute: typeof GamificacaoRoute
+  GamificacaoRoute: typeof GamificacaoRouteWithChildren
   LoginRoute: typeof LoginRoute
   MapeamentoRiscosPsicossociaisRoute: typeof MapeamentoRiscosPsicossociaisRoute
   MeuPerfilRoute: typeof MeuPerfilRoute
@@ -321,10 +371,11 @@ export interface RootRouteChildren {
   PesquisaEngajamentoRoute: typeof PesquisaEngajamentoRoute
   PesquisaRapidaRoute: typeof PesquisaRapidaRoute
   PesquisaSatisfacaoRoute: typeof PesquisaSatisfacaoRoute
-  PlanosDesenvolvimentoRoute: typeof PlanosDesenvolvimentoRoute
+  PlanosDesenvolvimentoRoute: typeof PlanosDesenvolvimentoRouteWithChildren
   ProcessosSeletivosRoute: typeof ProcessosSeletivosRoute
   RelatoriosGeraisRoute: typeof RelatoriosGeraisRoute
   Reunioes11Route: typeof Reunioes11Route
+  SetoresRoute: typeof SetoresRoute
   SuperPesquisaRoute: typeof SuperPesquisaRoute
   VagasRoute: typeof VagasRoute
   ShopHistoricoRoute: typeof ShopHistoricoRoute
@@ -351,6 +402,13 @@ declare module '@tanstack/react-router' {
       path: '/cadastro-desligamento'
       fullPath: '/cadastro-desligamento'
       preLoaderRoute: typeof CadastroDesligamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cargos-salarios': {
+      id: '/cargos-salarios'
+      path: '/cargos-salarios'
+      fullPath: '/cargos-salarios'
+      preLoaderRoute: typeof CargosSalariosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalogo': {
@@ -472,6 +530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Reunioes11RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/setores': {
+      id: '/setores'
+      path: '/setores'
+      fullPath: '/setores'
+      preLoaderRoute: typeof SetoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/super-pesquisa': {
       id: '/super-pesquisa'
       path: '/super-pesquisa'
@@ -486,6 +551,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VagasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/gamificacao/historico': {
+      id: '/gamificacao/historico'
+      path: '/historico'
+      fullPath: '/gamificacao/historico'
+      preLoaderRoute: typeof GamificacaoHistoricoRouteImport
+      parentRoute: typeof GamificacaoRoute
+    }
+    '/planos-desenvolvimento/gestao': {
+      id: '/planos-desenvolvimento/gestao'
+      path: '/gestao'
+      fullPath: '/planos-desenvolvimento/gestao'
+      preLoaderRoute: typeof PlanosDesenvolvimentoGestaoRouteImport
+      parentRoute: typeof PlanosDesenvolvimentoRoute
+    }
     '/shop/historico': {
       id: '/shop/historico'
       path: '/shop/historico'
@@ -496,15 +575,41 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface GamificacaoRouteChildren {
+  GamificacaoHistoricoRoute: typeof GamificacaoHistoricoRoute
+}
+
+const GamificacaoRouteChildren: GamificacaoRouteChildren = {
+  GamificacaoHistoricoRoute: GamificacaoHistoricoRoute,
+}
+
+const GamificacaoRouteWithChildren = GamificacaoRoute._addFileChildren(
+  GamificacaoRouteChildren,
+)
+
+interface PlanosDesenvolvimentoRouteChildren {
+  PlanosDesenvolvimentoGestaoRoute: typeof PlanosDesenvolvimentoGestaoRoute
+}
+
+const PlanosDesenvolvimentoRouteChildren: PlanosDesenvolvimentoRouteChildren = {
+  PlanosDesenvolvimentoGestaoRoute: PlanosDesenvolvimentoGestaoRoute,
+}
+
+const PlanosDesenvolvimentoRouteWithChildren =
+  PlanosDesenvolvimentoRoute._addFileChildren(
+    PlanosDesenvolvimentoRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AvaliacoesRoute: AvaliacoesRoute,
   CadastroDesligamentoRoute: CadastroDesligamentoRoute,
+  CargosSalariosRoute: CargosSalariosRoute,
   CatalogoRoute: CatalogoRoute,
   ColaboradoresRoute: ColaboradoresRoute,
   ComunicadosRoute: ComunicadosRoute,
   FeedbacksRoute: FeedbacksRoute,
-  GamificacaoRoute: GamificacaoRoute,
+  GamificacaoRoute: GamificacaoRouteWithChildren,
   LoginRoute: LoginRoute,
   MapeamentoRiscosPsicossociaisRoute: MapeamentoRiscosPsicossociaisRoute,
   MeuPerfilRoute: MeuPerfilRoute,
@@ -513,10 +618,11 @@ const rootRouteChildren: RootRouteChildren = {
   PesquisaEngajamentoRoute: PesquisaEngajamentoRoute,
   PesquisaRapidaRoute: PesquisaRapidaRoute,
   PesquisaSatisfacaoRoute: PesquisaSatisfacaoRoute,
-  PlanosDesenvolvimentoRoute: PlanosDesenvolvimentoRoute,
+  PlanosDesenvolvimentoRoute: PlanosDesenvolvimentoRouteWithChildren,
   ProcessosSeletivosRoute: ProcessosSeletivosRoute,
   RelatoriosGeraisRoute: RelatoriosGeraisRoute,
   Reunioes11Route: Reunioes11Route,
+  SetoresRoute: SetoresRoute,
   SuperPesquisaRoute: SuperPesquisaRoute,
   VagasRoute: VagasRoute,
   ShopHistoricoRoute: ShopHistoricoRoute,

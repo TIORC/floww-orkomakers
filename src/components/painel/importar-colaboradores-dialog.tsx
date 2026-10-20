@@ -14,12 +14,13 @@ export function ImportarColaboradoresDialog({
 }: {
   aberto: boolean;
   onFechar: () => void;
-  onImportar: (linhas: LinhaImportada[]) => void;
+  onImportar: (linhas: LinhaImportada[]) => Promise<void>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [linhas, setLinhas] = useState<LinhaImportada[]>([]);
   const [nomeArquivo, setNomeArquivo] = useState("");
   const [lendo, setLendo] = useState(false);
+  const [salvando, setSalvando] = useState(false);
 
   if (!aberto) return null;
 
@@ -54,13 +55,17 @@ export function ImportarColaboradoresDialog({
     }
   }
 
-  function confirmar() {
+  async function confirmar() {
     if (validas.length === 0) return;
-    onImportar(validas);
-    toast.success(`${validas.length} colaborador(es) importado(s).`);
-    setLinhas([]);
-    setNomeArquivo("");
-    onFechar();
+    setSalvando(true);
+    try {
+      await onImportar(validas);
+      setLinhas([]);
+      setNomeArquivo("");
+      onFechar();
+    } finally {
+      setSalvando(false);
+    }
   }
 
   return (
@@ -168,10 +173,10 @@ export function ImportarColaboradoresDialog({
           <button
             type="button"
             onClick={confirmar}
-            disabled={validas.length === 0}
+            disabled={validas.length === 0 || salvando}
             className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-900 shadow transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Importar {validas.length} colaborador(es)
+            {salvando ? "Salvando..." : `Importar ${validas.length} colaborador(es)`}
           </button>
         </div>
       </div>

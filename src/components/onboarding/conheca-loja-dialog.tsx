@@ -32,14 +32,6 @@ export function ConheçaLojaDialog({ aberto, onFechar }: { aberto: boolean; onFe
               className="absolute -bottom-3 left-[50px] size-[22px] rotate-45 bg-white ring-1 ring-black/5"
             />
           </div>
-          <img
-            src="/images/loja.png"
-            alt=""
-            aria-hidden
-            width={1698}
-            height={926}
-            className="brand-wave -ml-11 mt-6 w-full max-w-[30.8rem] rounded-2xl object-contain"
-          />
         </div>
 
         <footer className="flex justify-end pb-11 pt-7 sm:pb-14">
