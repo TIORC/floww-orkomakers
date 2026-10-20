@@ -25,10 +25,32 @@ function LoginPage() {
   const [carregando, setCarregando] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
 
+  const [criarConta, setCriarConta] = useState(false);
+
   async function entrar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     setCarregando(true);
     setMensagem(null);
+    if (criarConta) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: senha,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      setCarregando(false);
+      if (error) {
+        setMensagem(error.message.includes("registered") ? "Este e-mail já tem conta." : "Não foi possível criar a conta. Use uma senha com pelo menos 6 caracteres.");
+        return;
+      }
+      if (!data.session) {
+        setMensagem("Conta criada! Confirme pelo link enviado ao seu e-mail e depois entre.");
+        setCriarConta(false);
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["usuario-logado"] });
+      navigate({ to: "/" });
+      return;
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
     setCarregando(false);
     if (error) {
@@ -102,7 +124,7 @@ function LoginPage() {
         </div>
 
         <form onSubmit={entrar} className="mt-8">
-          <h1 className="font-display text-2xl font-semibold text-white">Entrar na sua conta</h1>
+          <h1 className="font-display text-2xl font-semibold text-white">{criarConta ? "Criar sua conta" : "Entrar na sua conta"}</h1>
           <p className="mt-2 text-sm text-white/80">Use suas credenciais corporativas para acessar o painel.</p>
 
           <label htmlFor="email" className="mt-8 block text-sm font-medium text-white">
@@ -127,7 +149,7 @@ function LoginPage() {
               id="senha"
               type={mostrarSenha ? "text" : "password"}
               required
-              autoComplete="current-password"
+              autoComplete={criarConta ? "new-password" : "current-password"}
               value={senha}
               onChange={(evento) => setSenha(evento.target.value)}
               placeholder="••••••••"
@@ -163,7 +185,15 @@ function LoginPage() {
             disabled={carregando}
             className="mt-7 w-full rounded-xl bg-brand px-5 py-3.5 text-sm font-semibold tracking-wide text-slate-900 shadow transition hover:brightness-110 disabled:opacity-60"
           >
-            {carregando ? "Entrando..." : "Entrar"}
+            {carregando ? "Aguarde..." : criarConta ? "Criar conta" : "Entrar"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setCriarConta((v) => !v); setMensagem(null); }}
+            className="mt-5 w-full text-center text-sm font-medium text-brand underline-offset-4 hover:underline"
+          >
+            {criarConta ? "Já tenho conta — entrar" : "Não tem conta? Criar conta"}
           </button>
 
           <p className="mt-6 text-center text-xs text-white/60">Acesso restrito a colaboradores</p>

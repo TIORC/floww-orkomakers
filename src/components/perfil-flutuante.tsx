@@ -1,5 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useUsuarioLogado } from "@/hooks/use-usuario-logado";
 import { motion } from "framer-motion";
 import { ChevronDown, CircleHelp, EyeOff, Megaphone, User, type LucideIcon } from "lucide-react";
@@ -38,7 +40,15 @@ const ITEM = "cursor-pointer rounded-md text-sm text-white focus:bg-panel-active
 // Perfil fixo no topo direito de todas as páginas. Nome e setor são placeholders até a integração.
 export function PerfilFlutuante() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: usuario, isPending } = useUsuarioLogado();
+
+  async function sair() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/login", replace: true });
+  }
 
   function irPara(to?: string) {
     if (to) navigate({ to });
@@ -94,7 +104,7 @@ export function PerfilFlutuante() {
 
           <DropdownMenuSeparator className="bg-panel-active" />
           <DropdownMenuItem
-            onSelect={() => navigate({ to: "/login" })}
+            onSelect={sair}
             className="cursor-pointer rounded-md text-sm font-semibold text-destructive focus:bg-panel-active focus:text-destructive"
           >
             Sair
