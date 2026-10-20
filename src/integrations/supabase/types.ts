@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      cargo_senioridades: {
+        Row: {
+          cargo_id: string
+          criado_em: string
+          faixa_maxima: number
+          faixa_minima: number
+          id: string
+          nivel: string
+          ordem: number
+          salario_base: number
+        }
+        Insert: {
+          cargo_id: string
+          criado_em?: string
+          faixa_maxima: number
+          faixa_minima: number
+          id?: string
+          nivel: string
+          ordem?: number
+          salario_base: number
+        }
+        Update: {
+          cargo_id?: string
+          criado_em?: string
+          faixa_maxima?: number
+          faixa_minima?: number
+          id?: string
+          nivel?: string
+          ordem?: number
+          salario_base?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cargo_senioridades_cargo_id_fkey"
+            columns: ["cargo_id"]
+            isOneToOne: false
+            referencedRelation: "cargos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cargos: {
+        Row: {
+          atualizado_em: string
+          cbo: string
+          criado_em: string
+          id: string
+          nome: string
+          setor: string
+        }
+        Insert: {
+          atualizado_em?: string
+          cbo?: string
+          criado_em?: string
+          id?: string
+          nome: string
+          setor: string
+        }
+        Update: {
+          atualizado_em?: string
+          cbo?: string
+          criado_em?: string
+          id?: string
+          nome?: string
+          setor?: string
+        }
+        Relationships: []
+      }
+      checkin_sentimento: {
+        Row: {
+          atualizado_em: string
+          colaborador_email: string
+          criado_em: string
+          data: string
+          emocao: string
+          id: string
+          motivo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          colaborador_email: string
+          criado_em?: string
+          data?: string
+          emocao: string
+          id?: string
+          motivo?: string
+        }
+        Update: {
+          atualizado_em?: string
+          colaborador_email?: string
+          criado_em?: string
+          data?: string
+          emocao?: string
+          id?: string
+          motivo?: string
+        }
+        Relationships: []
+      }
       colaboradores_importados: {
         Row: {
           acesso_master: boolean
@@ -121,6 +219,172 @@ export type Database = {
           unidade?: string
         }
         Relationships: []
+      }
+      historico_ranking_mensal: {
+        Row: {
+          ano: number
+          colaborador_id: string | null
+          criado_em: string
+          foto_url: string | null
+          id: string
+          mes: number
+          meta: number
+          nome: string
+          pontos: number
+          posicao: number
+          setor: string
+        }
+        Insert: {
+          ano: number
+          colaborador_id?: string | null
+          criado_em?: string
+          foto_url?: string | null
+          id?: string
+          mes: number
+          meta?: number
+          nome: string
+          pontos?: number
+          posicao: number
+          setor?: string
+        }
+        Update: {
+          ano?: number
+          colaborador_id?: string | null
+          criado_em?: string
+          foto_url?: string | null
+          id?: string
+          mes?: number
+          meta?: number
+          nome?: string
+          pontos?: number
+          posicao?: number
+          setor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_ranking_mensal_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_importados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notificacoes: {
+        Row: {
+          ator_foto_url: string | null
+          ator_nome: string
+          criada_em: string
+          destinatario_email: string
+          id: string
+          lida: boolean
+          texto: string
+          tipo: string
+        }
+        Insert: {
+          ator_foto_url?: string | null
+          ator_nome?: string
+          criada_em?: string
+          destinatario_email: string
+          id?: string
+          lida?: boolean
+          texto: string
+          tipo?: string
+        }
+        Update: {
+          ator_foto_url?: string | null
+          ator_nome?: string
+          criada_em?: string
+          destinatario_email?: string
+          id?: string
+          lida?: boolean
+          texto?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      respostas_pesquisa: {
+        Row: {
+          colaborador_email: string
+          id: string
+          pesquisa: string
+          respondido_em: string
+          resposta: Json
+        }
+        Insert: {
+          colaborador_email: string
+          id?: string
+          pesquisa: string
+          respondido_em?: string
+          resposta?: Json
+        }
+        Update: {
+          colaborador_email?: string
+          id?: string
+          pesquisa?: string
+          respondido_em?: string
+          resposta?: Json
+        }
+        Relationships: []
+      }
+      setores: {
+        Row: {
+          criado_em: string
+          id: string
+          nome: string
+          sigla: string
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          nome: string
+          sigla: string
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          nome?: string
+          sigla?: string
+        }
+        Relationships: []
+      }
+      vagas: {
+        Row: {
+          cargo_id: string
+          criado_em: string
+          criado_por: string | null
+          id: string
+          setor: string
+          status: string
+          titulo: string
+        }
+        Insert: {
+          cargo_id: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          setor: string
+          status?: string
+          titulo: string
+        }
+        Update: {
+          cargo_id?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          setor?: string
+          status?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vagas_cargo_id_fkey"
+            columns: ["cargo_id"]
+            isOneToOne: false
+            referencedRelation: "cargos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
