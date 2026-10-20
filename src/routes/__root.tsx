@@ -9,7 +9,9 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -120,12 +122,32 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const location = useLocation();
+  const navigate = useNavigate();
+  const naLogin = location.pathname === "/login";
+  const [verificado, setVerificado] = useState(false);
+
+  // Sem sessão, o sistema sempre começa pela tela de login.
+  useEffect(() => {
+    let ativo = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!ativo) return;
+      if (!data.session && !naLogin) navigate({ to: "/login", replace: true });
+      setVerificado(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((evento, sessao) => {
+      if (!sessao && evento === "SIGNED_OUT") navigate({ to: "/login", replace: true });
+    });
+    return () => {
+      ativo = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [naLogin, navigate]);
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      {location.pathname !== "/login" && <PerfilFlutuante />}
-      <Outlet />
+      {!naLogin && verificado && <PerfilFlutuante />}
+      {naLogin || verificado ? <Outlet /> : <div className="min-h-screen bg-background" />}
     </QueryClientProvider>
   );
 }
