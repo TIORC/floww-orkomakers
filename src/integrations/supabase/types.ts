@@ -220,6 +220,99 @@ export type Database = {
         }
         Relationships: []
       }
+      comunicados: {
+        Row: {
+          autor_id: string
+          destaque: boolean
+          id: string
+          mensagem: string
+          publicado_em: string
+          publico_tipo: string
+          publico_valores: string[]
+          titulo: string
+        }
+        Insert: {
+          autor_id?: string
+          destaque?: boolean
+          id?: string
+          mensagem: string
+          publicado_em?: string
+          publico_tipo?: string
+          publico_valores?: string[]
+          titulo: string
+        }
+        Update: {
+          autor_id?: string
+          destaque?: boolean
+          id?: string
+          mensagem?: string
+          publicado_em?: string
+          publico_tipo?: string
+          publico_valores?: string[]
+          titulo?: string
+        }
+        Relationships: []
+      }
+      email_envios: {
+        Row: {
+          assunto: string | null
+          criado_em: string
+          destinatario: string | null
+          detalhe: string | null
+          evento: string
+          id: string
+          referencia: string
+          status: string
+        }
+        Insert: {
+          assunto?: string | null
+          criado_em?: string
+          destinatario?: string | null
+          detalhe?: string | null
+          evento: string
+          id?: string
+          referencia: string
+          status: string
+        }
+        Update: {
+          assunto?: string | null
+          criado_em?: string
+          destinatario?: string | null
+          detalhe?: string | null
+          evento?: string
+          id?: string
+          referencia?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      feedbacks: {
+        Row: {
+          autor_email: string
+          autor_id: string
+          criado_em: string
+          destinatario_email: string
+          id: string
+          mensagem: string
+        }
+        Insert: {
+          autor_email: string
+          autor_id?: string
+          criado_em?: string
+          destinatario_email: string
+          id?: string
+          mensagem: string
+        }
+        Update: {
+          autor_email?: string
+          autor_id?: string
+          criado_em?: string
+          destinatario_email?: string
+          id?: string
+          mensagem?: string
+        }
+        Relationships: []
+      }
       historico_ranking_mensal: {
         Row: {
           ano: number

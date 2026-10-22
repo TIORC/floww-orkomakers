@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { listarSetores } from "@/lib/cargos";
+import { enviarBoasVindas } from "@/lib/emails.functions";
 import { listarPessoasParaGestor } from "@/lib/organograma-dados";
 import { cn } from "@/lib/utils";
 
@@ -140,6 +141,7 @@ export function CadastrarColaboradorDialog({ aberto, onFechar }: { aberto: boole
     await queryClient.invalidateQueries({ queryKey: ["organograma"] });
     await queryClient.invalidateQueries({ queryKey: ["colaboradores-importados"] });
     toast.success(`${nome} cadastrado(a) no organograma.`);
+    enviarBoasVindas({ data: { email } }).catch((e) => console.error(e));
     fechar();
   }
 

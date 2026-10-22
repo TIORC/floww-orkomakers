@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { registrarCheckin } from "@/lib/checkin-sentimento";
+import { notificarHumorBaixo } from "@/lib/emails.functions";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -158,6 +159,9 @@ export function CheckinSentimento({ onEnviar }: { onEnviar?: (checkin: CheckinEn
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível registrar o sentimento.");
       return;
+    }
+    if (emocao === "triste" || emocao === "muito_triste") {
+      notificarHumorBaixo().catch((e) => console.error(e));
     }
     onEnviar?.({ emocao, motivo: motivo.trim() });
     setEnviado(true);
