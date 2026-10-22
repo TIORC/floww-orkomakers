@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792672266470,
+      "tag": "0000_feedbacks_comunicados_e_log_de_emails",
+      "breakpoints": true
+    }
+  ]
 }
