@@ -6,10 +6,6 @@ import { enviarERegistrar, escapar, getAdmin, layout } from "./emails.server";
 
 const ROTULO_EMOCAO: Record<string, string> = { triste: "Triste", muito_triste: "Muito triste" };
 
-function hojeSaoPaulo() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
-}
-
 // Cria o feedback e avisa o destinatário por e-mail.
 export const criarFeedback = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -109,7 +105,6 @@ export const notificarHumorBaixo = createServerFn({ method: "POST" })
     const email = (context.claims as { email?: string }).email;
     if (!email) return { email: "pulado" };
     const admin = await getAdmin();
-    const dia = hojeSaoPaulo();
     const { data: checkins } = await admin
       .from("checkin_sentimento")
       .select("emocao, data")
@@ -144,6 +139,5 @@ export const notificarHumorBaixo = createServerFn({ method: "POST" })
       assunto: `${nome} registrou humor "${emocao}" hoje`,
       html: layout("Atenção ao humor da sua equipe", `<p><strong>${escapar(nome)}</strong> registrou o humor <strong>${emocao}</strong> em ${checkin.data.split("-").reverse().join("/")}.</p><p>Que tal conversar com essa pessoa?</p>`),
     });
-    void dia;
     return { email: status };
   });
