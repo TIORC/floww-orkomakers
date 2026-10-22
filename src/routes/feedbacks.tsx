@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { EnviarFeedbackDialog } from "@/components/painel/enviar-feedback-dialog";
 
 export const Route = createFileRoute("/feedbacks")({
   head: () => ({
@@ -78,6 +79,7 @@ function Feedbacks() {
   const [filtrado, setFiltrado] = useState(padrao);
   const [aba, setAba] = useState<Aba>("Recebidos");
   const [busca, setBusca] = useState("");
+  const [feedbackAberto, setFeedbackAberto] = useState(false);
 
   const radar = ITENS_RESUMO.map((categoria) => ({ categoria, usuario: 0, media: 0 }));
   const mensal = mesesDoPeriodo(filtrado.inicio, filtrado.fim);
@@ -95,6 +97,7 @@ function Feedbacks() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
+      <EnviarFeedbackDialog aberto={feedbackAberto} onFechar={() => setFeedbackAberto(false)} />
       <main className="min-w-0 flex-1 space-y-6 px-10 pb-10 pt-24">
         <Card className="border-panel-active bg-panel text-white">
           <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4">
@@ -106,7 +109,7 @@ function Feedbacks() {
               <Button className="bg-brand text-slate-900 shadow hover:bg-brand/90">
                 <MessageSquarePlus className="mr-2 size-4" /> Solicitar Feedback
               </Button>
-              <Button className="bg-brand text-slate-900 shadow hover:bg-brand/90">
+              <Button onClick={() => setFeedbackAberto(true)} className="bg-brand text-slate-900 shadow hover:bg-brand/90">
                 <Send className="mr-2 size-4" /> Enviar Feedback
               </Button>
             </div>
