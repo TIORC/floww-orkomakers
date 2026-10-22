@@ -64,7 +64,7 @@ export async function enviarERegistrar(envio: Envio) {
         "X-Connection-Api-Key": resendKey,
       },
       body: JSON.stringify({
-        from: process.env["EMAIL_FROM"] || "Orcoma Orkomakers <onboarding@resend.dev>",
+        from: process.env["EMAIL_FROM"] || "Orcoma Orkomakers <nao-responda@orcoma.com.br>",
         to: [envio.destinatario.trim()],
         subject: envio.assunto,
         html: envio.html,
