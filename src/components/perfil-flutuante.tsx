@@ -81,8 +81,12 @@ export function PerfilFlutuante() {
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-3 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-brand">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-panel-active text-panel-text">
-            <User className="size-5" aria-hidden />
+          <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-panel-active text-panel-text">
+            {usuario?.fotoUrl ? (
+              <img src={usuario.fotoUrl} alt="" className="size-full object-cover" />
+            ) : (
+              <User className="size-5" aria-hidden />
+            )}
           </span>
           <div className="min-w-0 text-left leading-tight">
             <p className="truncate text-sm font-semibold text-white">{isPending ? "" : usuario?.nomeCompleto ?? "Sem usuário"}</p>

@@ -194,6 +194,8 @@ export function DetalhesColaboradorDialog({
     await queryClient.invalidateQueries({ queryKey: ["organograma"] });
     await queryClient.invalidateQueries({ queryKey: ["colaboradores-diretorio"] });
     await queryClient.invalidateQueries({ queryKey: ["ranking-moedas"] });
+    // Perfil flutuante lê o setor do usuário logado: sem isso, mostra o departamento antigo.
+    await queryClient.invalidateQueries({ queryKey: ["usuario-logado"] });
   }
 
   // Papéis funcionam como escolha única: marcar um desmarca o anterior. Desmarcar sozinho não faz nada.
