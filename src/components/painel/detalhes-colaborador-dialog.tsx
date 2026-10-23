@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Mail, PauseCircle, UserMinus, Pencil, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { CheckCircle2, Loader2, Mail, PauseCircle, UserMinus, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { enviarPrimeiroAcesso } from "@/lib/emails.functions";
@@ -111,6 +112,14 @@ export function DetalhesColaboradorDialog({
   const [motivoDesativacaoOutros, setMotivoDesativacaoOutros] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [enviandoAcesso, setEnviandoAcesso] = useState(false);
+  const [acessoEnviado, setAcessoEnviado] = useState(false);
+
+  // Mostra a confirmação verde por 4 segundos e volta ao botão normal.
+  useEffect(() => {
+    if (!acessoEnviado) return;
+    const prazo = setTimeout(() => setAcessoEnviado(false), 4000);
+    return () => clearTimeout(prazo);
+  }, [acessoEnviado]);
   const [salvandoNivel, setSalvandoNivel] = useState(false);
   const [form, setForm] = useState<CamposEditaveis | null>(null);
   const [tipoDesligamento, setTipoDesligamento] = useState<TipoDesligamento | "">("");
@@ -298,7 +307,7 @@ export function DetalhesColaboradorDialog({
       const resultado = await enviarPrimeiroAcesso({
         data: { email: registro["email"], origem: window.location.origin },
       });
-      if (resultado.status === "enviado") toast.success(`Instruções de primeiro acesso enviadas para ${registro["email"]}.`);
+      if (resultado.status === "enviado") setAcessoEnviado(true);
       else toast.warning("Não foi possível enviar as instruções de primeiro acesso.");
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível enviar as instruções.");
@@ -731,19 +740,50 @@ export function DetalhesColaboradorDialog({
                 ) : (
                   <>
                     {registro?.["email"] && (
-                      <button
+                      <motion.button
                         type="button"
                         onClick={enviarInstrucoesAcesso}
-                        disabled={enviandoAcesso}
-                        className="inline-flex items-center gap-2 rounded-lg border border-brand px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand/10 disabled:opacity-60"
+                        disabled={enviandoAcesso || acessoEnviado}
+                        animate={
+                          acessoEnviado
+                            ? { backgroundColor: "#16a34a", borderColor: "#16a34a", color: "#ffffff" }
+                            : { backgroundColor: "rgba(250,204,21,0)", borderColor: "#facc15", color: "#facc15" }
+                        }
+                        transition={{ duration: 0.3 }}
+                        className="inline-flex min-w-[17rem] items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition hover:bg-brand/10 disabled:cursor-default disabled:hover:bg-transparent disabled:opacity-90"
                       >
-                        {enviandoAcesso ? (
-                          <Loader2 className="size-4 animate-spin" aria-hidden />
-                        ) : (
-                          <Mail className="size-4" aria-hidden />
-                        )}
-                        Enviar instruções de primeiro acesso (e-mail)
-                      </button>
+                        <AnimatePresence mode="wait" initial={false}>
+                          {acessoEnviado ? (
+                            <motion.span
+                              key="enviado"
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.8 }}
+                              transition={{ duration: 0.25 }}
+                              className="inline-flex items-center gap-2"
+                            >
+                              <CheckCircle2 className="size-4" aria-hidden />
+                              E-mail enviado com sucesso!
+                            </motion.span>
+                          ) : (
+                            <motion.span
+                              key="enviar"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="inline-flex items-center gap-2"
+                            >
+                              {enviandoAcesso ? (
+                                <Loader2 className="size-4 animate-spin" aria-hidden />
+                              ) : (
+                                <Mail className="size-4" aria-hidden />
+                              )}
+                              Enviar instruções de primeiro acesso (e-mail)
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </motion.button>
                     )}
                     {!desligado && !desativado && (
                       <button

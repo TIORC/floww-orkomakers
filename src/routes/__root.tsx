@@ -78,6 +78,9 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
+// Páginas que funcionam sem sessão. A de definir senha precisa da sessão criada pelo link do e-mail.
+const ROTAS_PUBLICAS = ["/login", "/definir-senha"];
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
@@ -100,10 +103,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
-  // Sem sessão, qualquer página (inclusive o painel em "/") volta para o login.
+  // Sem sessão, qualquer página (inclusive o painel em "/") volta para o login, menos as rotas públicas.
   // Checado só no navegador: no servidor a sessão não está disponível.
   beforeLoad: async ({ location }) => {
-    if (typeof window === "undefined" || location.pathname === "/login") return;
+    if (typeof window === "undefined" || ROTAS_PUBLICAS.includes(location.pathname)) return;
     const { data } = await supabase.auth.getSession();
     if (!data.session) throw redirect({ to: "/login", replace: true });
   },
@@ -132,14 +135,15 @@ function RootComponent() {
   const location = useLocation();
   const navigate = useNavigate();
   const naLogin = location.pathname === "/login";
+  const naRotaPublica = ROTAS_PUBLICAS.includes(location.pathname);
   const [verificado, setVerificado] = useState(false);
 
-  // Sem sessão, o sistema sempre começa pela tela de login.
+  // Sem sessão, o sistema sempre começa pela tela de login, exceto nas rotas públicas (ex.: definir senha pelo link do e-mail).
   useEffect(() => {
     let ativo = true;
     supabase.auth.getSession().then(({ data }) => {
       if (!ativo) return;
-      if (!data.session && !naLogin) navigate({ to: "/login", replace: true });
+      if (!data.session && !naRotaPublica) navigate({ to: "/login", replace: true });
       setVerificado(true);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((evento, sessao) => {
@@ -149,12 +153,12 @@ function RootComponent() {
       ativo = false;
       sub.subscription.unsubscribe();
     };
-  }, [naLogin, navigate]);
+  }, [naRotaPublica, navigate]);
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      {!naLogin && verificado && <PerfilFlutuante />}
+      {!naRotaPublica && verificado && <PerfilFlutuante />}
       {naLogin || verificado ? <Outlet /> : <div className="min-h-screen bg-background" />}
     </QueryClientProvider>
   );
