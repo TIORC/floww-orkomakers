@@ -137,13 +137,18 @@ export type Database = {
           id_planilha: string
           idioma: string
           matricula: string
+          motivo_desligamento: string
+          motivo_desligamento_outros: string
+          nivel_acesso: string
           nome: string
           nome_completo: string
           origem_cadastro: string
+          ouvidor: boolean
           papel: string
           participa_gamificacao: string
           sexo: string
           situacao: string
+          tipo_desligamento: string
           ultimo_acesso: string
           ultimo_dia_trabalhado: string
           unidade: string
@@ -172,13 +177,18 @@ export type Database = {
           id_planilha: string
           idioma?: string
           matricula?: string
+          motivo_desligamento?: string
+          motivo_desligamento_outros?: string
+          nivel_acesso?: string
           nome: string
           nome_completo: string
           origem_cadastro?: string
+          ouvidor?: boolean
           papel?: string
           participa_gamificacao?: string
           sexo?: string
           situacao?: string
+          tipo_desligamento?: string
           ultimo_acesso?: string
           ultimo_dia_trabalhado?: string
           unidade?: string
@@ -207,13 +217,18 @@ export type Database = {
           id_planilha?: string
           idioma?: string
           matricula?: string
+          motivo_desligamento?: string
+          motivo_desligamento_outros?: string
+          nivel_acesso?: string
           nome?: string
           nome_completo?: string
           origem_cadastro?: string
+          ouvidor?: boolean
           papel?: string
           participa_gamificacao?: string
           sexo?: string
           situacao?: string
+          tipo_desligamento?: string
           ultimo_acesso?: string
           ultimo_dia_trabalhado?: string
           unidade?: string
@@ -484,7 +499,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      transferir_ouvidor: { Args: { destino_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
