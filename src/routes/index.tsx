@@ -8,6 +8,8 @@ import { RankingMoedas } from "@/components/painel/ranking-moedas";
 import { FlowwShop } from "@/components/painel/floww-shop";
 
 const CHAVE_BOAS_VINDAS = "floww:boas-vindas:v1";
+// Desativado por enquanto: troque para true para voltar a mostrar a Flafy.
+const MOSTRAR_BOAS_VINDAS = false;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,11 +29,13 @@ export const Route = createFileRoute("/")({
 const BANNER_WIDTH = 1488;
 const BANNER_HEIGHT = 344;
 
-const logos = [
+const logos: { src: string; alt: string; altura?: string }[] = [
   { src: "/images/logo-academy.png", alt: "Academy" },
   { src: "/images/logo-solucoes-marketing.png", alt: "Soluções de Marketing" },
   { src: "/images/logo-solutions.webp", alt: "Solutions" },
   { src: "/images/logo-grupo-orcoma.png", alt: "Grupo Orcoma" },
+  { src: "/images/logo-otimizza-process.png", alt: "Otimizza Process", altura: "h-20" },
+  { src: "/images/logo-to-no-financeiro.png", alt: "Tô no Financeiro" },
 ];
 // Repete os logos o suficiente para a metade do trilho cobrir a largura da tela
 const logoGroup = Array.from({ length: 4 }, () => logos).flat();
@@ -41,6 +45,7 @@ function Index() {
 
   // Mostra as boas-vindas uma vez por sessão do navegador
   useEffect(() => {
+    if (!MOSTRAR_BOAS_VINDAS) return;
     try {
       if (window.sessionStorage.getItem(CHAVE_BOAS_VINDAS) !== null) return;
       window.sessionStorage.setItem(CHAVE_BOAS_VINDAS, "visto");
@@ -70,7 +75,7 @@ function Index() {
                 alt={i < logoGroup.length ? logo.alt : ""}
                 aria-hidden={i >= logoGroup.length || undefined}
                 decoding="async"
-                className="logo-marquee-item mx-10 h-16 w-auto shrink-0 object-contain"
+                className={`logo-marquee-item mx-10 ${logo.altura ?? "h-16"} w-auto shrink-0 object-contain`}
               />
             ))}
           </div>

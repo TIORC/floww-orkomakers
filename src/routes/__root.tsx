@@ -3,6 +3,7 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
+  redirect,
   useLocation,
   useRouter,
   HeadContent,
@@ -99,6 +100,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
+  // Sem sessão, qualquer página (inclusive o painel em "/") volta para o login.
+  // Checado só no navegador: no servidor a sessão não está disponível.
+  beforeLoad: async ({ location }) => {
+    if (typeof window === "undefined" || location.pathname === "/login") return;
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) throw redirect({ to: "/login", replace: true });
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

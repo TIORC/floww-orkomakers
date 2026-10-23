@@ -18,6 +18,7 @@ import { Route as ColaboradoresRouteImport } from './routes/colaboradores'
 import { Route as ComunicadosRouteImport } from './routes/comunicados'
 import { Route as FeedbacksRouteImport } from './routes/feedbacks'
 import { Route as GamificacaoRouteImport } from './routes/gamificacao'
+import { Route as HorasExtrasFaltasRouteImport } from './routes/horas-extras-faltas'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MapeamentoRiscosPsicossociaisRouteImport } from './routes/mapeamento-riscos-psicossociais'
 import { Route as MeuPerfilRouteImport } from './routes/meu-perfil'
@@ -80,6 +81,11 @@ const FeedbacksRoute = FeedbacksRouteImport.update({
 const GamificacaoRoute = GamificacaoRouteImport.update({
   id: '/gamificacao',
   path: '/gamificacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HorasExtrasFaltasRoute = HorasExtrasFaltasRouteImport.update({
+  id: '/horas-extras-faltas',
+  path: '/horas-extras-faltas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/comunicados': typeof ComunicadosRoute
   '/feedbacks': typeof FeedbacksRoute
   '/gamificacao': typeof GamificacaoRouteWithChildren
+  '/horas-extras-faltas': typeof HorasExtrasFaltasRoute
   '/login': typeof LoginRoute
   '/mapeamento-riscos-psicossociais': typeof MapeamentoRiscosPsicossociaisRoute
   '/meu-perfil': typeof MeuPerfilRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByTo {
   '/comunicados': typeof ComunicadosRoute
   '/feedbacks': typeof FeedbacksRoute
   '/gamificacao': typeof GamificacaoRouteWithChildren
+  '/horas-extras-faltas': typeof HorasExtrasFaltasRoute
   '/login': typeof LoginRoute
   '/mapeamento-riscos-psicossociais': typeof MapeamentoRiscosPsicossociaisRoute
   '/meu-perfil': typeof MeuPerfilRoute
@@ -244,6 +252,7 @@ export interface FileRoutesById {
   '/comunicados': typeof ComunicadosRoute
   '/feedbacks': typeof FeedbacksRoute
   '/gamificacao': typeof GamificacaoRouteWithChildren
+  '/horas-extras-faltas': typeof HorasExtrasFaltasRoute
   '/login': typeof LoginRoute
   '/mapeamento-riscos-psicossociais': typeof MapeamentoRiscosPsicossociaisRoute
   '/meu-perfil': typeof MeuPerfilRoute
@@ -275,6 +284,7 @@ export interface FileRouteTypes {
     | '/comunicados'
     | '/feedbacks'
     | '/gamificacao'
+    | '/horas-extras-faltas'
     | '/login'
     | '/mapeamento-riscos-psicossociais'
     | '/meu-perfil'
@@ -304,6 +314,7 @@ export interface FileRouteTypes {
     | '/comunicados'
     | '/feedbacks'
     | '/gamificacao'
+    | '/horas-extras-faltas'
     | '/login'
     | '/mapeamento-riscos-psicossociais'
     | '/meu-perfil'
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/comunicados'
     | '/feedbacks'
     | '/gamificacao'
+    | '/horas-extras-faltas'
     | '/login'
     | '/mapeamento-riscos-psicossociais'
     | '/meu-perfil'
@@ -363,6 +375,7 @@ export interface RootRouteChildren {
   ComunicadosRoute: typeof ComunicadosRoute
   FeedbacksRoute: typeof FeedbacksRoute
   GamificacaoRoute: typeof GamificacaoRouteWithChildren
+  HorasExtrasFaltasRoute: typeof HorasExtrasFaltasRoute
   LoginRoute: typeof LoginRoute
   MapeamentoRiscosPsicossociaisRoute: typeof MapeamentoRiscosPsicossociaisRoute
   MeuPerfilRoute: typeof MeuPerfilRoute
@@ -444,6 +457,13 @@ declare module '@tanstack/react-router' {
       path: '/gamificacao'
       fullPath: '/gamificacao'
       preLoaderRoute: typeof GamificacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/horas-extras-faltas': {
+      id: '/horas-extras-faltas'
+      path: '/horas-extras-faltas'
+      fullPath: '/horas-extras-faltas'
+      preLoaderRoute: typeof HorasExtrasFaltasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -610,6 +630,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComunicadosRoute: ComunicadosRoute,
   FeedbacksRoute: FeedbacksRoute,
   GamificacaoRoute: GamificacaoRouteWithChildren,
+  HorasExtrasFaltasRoute: HorasExtrasFaltasRoute,
   LoginRoute: LoginRoute,
   MapeamentoRiscosPsicossociaisRoute: MapeamentoRiscosPsicossociaisRoute,
   MeuPerfilRoute: MeuPerfilRoute,

@@ -4,9 +4,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { Camera, Loader2, User, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { podeAlterarPapeis, useUsuarioLogado } from "@/hooks/use-usuario-logado";
+import { SeletorPapeis } from "@/components/painel/seletor-papeis";
+import { getIniciais } from "@/lib/iniciais";
 import { supabase } from "@/integrations/supabase/client";
 import { listarSetores } from "@/lib/cargos";
-import { enviarBoasVindas } from "@/lib/emails.functions";
+import { type NivelAcesso } from "@/lib/colaborador-detalhe";
+import { emailPermitido, MENSAGEM_DOMINIO_EMAIL } from "@/lib/dominios-email";
+import { criarAcessoColaborador } from "@/lib/emails.functions";
 import { listarPessoasParaGestor } from "@/lib/organograma-dados";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +21,13 @@ const ROTULO = "grid gap-1.5 text-sm font-semibold text-white";
 
 // A tipagem gerada do banco ainda não inclui colaboradores_importados.
 const db = supabase as unknown as SupabaseClient<any>;
+
+type AbaCadastro = "informacoes" | "permissoes";
+
+const ABAS_CADASTRO: { valor: AbaCadastro; rotulo: string }[] = [
+  { valor: "informacoes", rotulo: "Informações Gerais" },
+  { valor: "permissoes", rotulo: "Permissões" },
+];
 
 type Formulario = {
   nome: string;
@@ -30,6 +42,7 @@ type Formulario = {
   grupos: string;
   papel: string;
   gestorEmail: string;
+  nivelAcesso: NivelAcesso;
   etnia: string;
   sexo: string;
   genero: string;
@@ -53,6 +66,7 @@ const FORMULARIO_VAZIO: Formulario = {
   grupos: "",
   papel: "",
   gestorEmail: "",
+  nivelAcesso: "colaborador",
   etnia: "",
   sexo: "",
   genero: "",
@@ -60,7 +74,7 @@ const FORMULARIO_VAZIO: Formulario = {
   dataAdmissao: "",
   situacao: "Ativo",
   origem: "Manual",
-  gamificacao: "nao",
+  gamificacao: "sim",
 };
 
 // Data do input (AAAA-MM-DD) para o mesmo formato da planilha (DD/MM/AAAA).
@@ -77,6 +91,7 @@ export function CadastrarColaboradorDialog({ aberto, onFechar }: { aberto: boole
   const queryClient = useQueryClient();
   const [form, setForm] = useState<Formulario>(FORMULARIO_VAZIO);
   const [salvando, setSalvando] = useState(false);
+  const [aba, setAba] = useState<AbaCadastro>("informacoes");
 
   const { data: setoresLista = [] } = useQuery({ queryKey: ["setores"], queryFn: listarSetores });
   const { data: gestores = [] } = useQuery({
@@ -84,6 +99,10 @@ export function CadastrarColaboradorDialog({ aberto, onFechar }: { aberto: boole
     queryFn: listarPessoasParaGestor,
     enabled: aberto,
   });
+  const { data: usuarioLogado } = useUsuarioLogado();
+  // Só Administrador e Desenvolvedor do Sistema escolhem o papel. Os demais cadastram como Colaborador.
+  const podeEscolherPapel = podeAlterarPapeis(usuarioLogado);
+  const gestorSelecionado = gestores.find((pessoa) => pessoa.email === form.gestorEmail);
 
   if (!aberto) return null;
 
@@ -93,6 +112,7 @@ export function CadastrarColaboradorDialog({ aberto, onFechar }: { aberto: boole
 
   function fechar() {
     setForm(FORMULARIO_VAZIO);
+    setAba("informacoes");
     onFechar();
   }
 
@@ -103,6 +123,10 @@ export function CadastrarColaboradorDialog({ aberto, onFechar }: { aberto: boole
     const email = form.email.trim();
     if (!nome || !email) {
       toast.error("Informe o nome e o e-mail.");
+      return;
+    }
+    if (!emailPermitido(email)) {
+      toast.error(MENSAGEM_DOMINIO_EMAIL);
       return;
     }
 
@@ -123,6 +147,7 @@ export function CadastrarColaboradorDialog({ aberto, onFechar }: { aberto: boole
       papel: form.papel.trim(),
       gestor_direto: gestor?.nome ?? "",
       gestor_direto_email: gestor?.email ?? "",
+      nivel_acesso: podeEscolherPapel ? form.nivelAcesso : "colaborador",
       etnia: form.etnia.trim(),
       sexo: form.sexo.trim(),
       genero: form.genero.trim(),
@@ -141,7 +166,17 @@ export function CadastrarColaboradorDialog({ aberto, onFechar }: { aberto: boole
     await queryClient.invalidateQueries({ queryKey: ["organograma"] });
     await queryClient.invalidateQueries({ queryKey: ["colaboradores-importados"] });
     toast.success(`${nome} cadastrado(a) no organograma.`);
-    enviarBoasVindas({ data: { email } }).catch((e) => console.error(e));
+    const acesso = await criarAcessoColaborador({ data: { email, origem: window.location.origin } }).catch((e) => {
+      console.error(e);
+      return { status: "erro" as const };
+    });
+    if (acesso.status === "enviado") {
+      toast.success(`Convite de acesso enviado para ${email}.`);
+    } else if (acesso.status === "ja_tem_conta") {
+      toast.info("Esta pessoa já tem conta de acesso.");
+    } else {
+      toast.warning("Cadastrado, mas o convite de acesso não foi enviado.");
+    }
     fechar();
   }
 
@@ -151,7 +186,7 @@ export function CadastrarColaboradorDialog({ aberto, onFechar }: { aberto: boole
         role="dialog"
         aria-modal="true"
         aria-labelledby="cadastrar-colaborador-titulo"
-        className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-panel-active bg-panel p-6 shadow-2xl sm:p-8"
+        className="relative max-h-[92vh] w-[95vw] max-w-[96rem] overflow-y-auto rounded-2xl border border-panel-active bg-panel p-6 shadow-2xl sm:p-8"
       >
         <button
           type="button"
@@ -169,9 +204,34 @@ export function CadastrarColaboradorDialog({ aberto, onFechar }: { aberto: boole
           Preencha os dados do novo colaborador. Campos com <span className="text-destructive">*</span> são obrigatórios.
         </p>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-[14rem_1fr]">
+        <div role="tablist" aria-label="Seções" className="mt-5 flex justify-center gap-2">
+          {ABAS_CADASTRO.map(({ valor, rotulo }) => (
+            <button
+              key={valor}
+              type="button"
+              role="tab"
+              aria-selected={aba === valor}
+              onClick={() => setAba(valor)}
+              className={cn(
+                "rounded-full px-5 py-2 text-sm font-semibold transition",
+                aba === valor
+                  ? "bg-brand text-slate-900 shadow"
+                  : "border border-panel-active text-white hover:bg-panel-active",
+              )}
+            >
+              {rotulo}
+            </button>
+          ))}
+        </div>
+
+        <div
+          className={cn(
+            "mt-6 grid gap-6 md:grid-cols-[16rem_1fr]",
+            aba === "informacoes" && "xl:grid-cols-[16rem_1fr_26rem]",
+          )}
+        >
           <div className="grid content-start gap-3">
-            <div className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-panel-active bg-background p-4 text-center">
+            <div className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-panel-active bg-background p-4 text-center">
               <User className="size-16 text-white/60" aria-hidden />
               <p className="text-xs text-white/80">Nenhuma foto selecionada</p>
             </div>
@@ -182,9 +242,28 @@ export function CadastrarColaboradorDialog({ aberto, onFechar }: { aberto: boole
               <Camera className="size-4" aria-hidden />
               Selecionar foto
             </button>
+
+            {aba === "permissoes" && (
+              <div className="px-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand">Responde a:</p>
+                <div className="mt-3 flex items-center gap-3">
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-panel-active text-sm font-bold text-panel-text">
+                    {getIniciais(gestorSelecionado?.nome ?? "") || "—"}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="break-words text-sm font-semibold text-white">
+                      {gestorSelecionado?.nome ?? "Sem gestor direto"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <form className="grid gap-4 sm:grid-cols-2" onSubmit={salvar}>
+          <form
+            className={cn("grid gap-4 sm:grid-cols-2", aba === "permissoes" && "hidden")}
+            onSubmit={salvar}
+          >
             <label className={cn(ROTULO, "sm:col-span-2")}>
               Nome (nome que será exibido)
               <Obrigatorio />
@@ -418,6 +497,15 @@ export function CadastrarColaboradorDialog({ aberto, onFechar }: { aberto: boole
               </button>
             </div>
           </form>
+
+          <SeletorPapeis
+            nivelAtual={form.nivelAcesso}
+            desabilitado={!podeEscolherPapel}
+            ocultarBloqueados
+            onAlterar={(nivel) => atualizar("nivelAcesso", nivel)}
+            mostrarNiveis={aba === "informacoes"}
+            mostrarOuvidor={aba === "permissoes"}
+          />
         </div>
       </div>
     </div>

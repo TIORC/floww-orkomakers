@@ -22,7 +22,11 @@ const PARTICIPANTES = [
 
 const TIPOS_PESQUISA = [
   { id: "anonima", rotulo: "Anônima", descricao: "não serão identificados os colaboradores." },
-  { id: "identificada", rotulo: "Identificada", descricao: "os colaboradores serão identificados nas respostas." },
+  {
+    id: "identificada",
+    rotulo: "Identificada",
+    descricao: "os colaboradores serão identificados nas respostas.",
+  },
 ] as const;
 
 const TIPOS_RESPOSTA = [
@@ -53,7 +57,15 @@ function SelectVazio({ rotulo, placeholder }: { rotulo: string; placeholder: str
   );
 }
 
-function CardShell({ titulo, descricao, children }: { titulo: string; descricao: string; children: ReactNode }) {
+function CardShell({
+  titulo,
+  descricao,
+  children,
+}: {
+  titulo: string;
+  descricao: string;
+  children: ReactNode;
+}) {
   return (
     <section className="rounded-2xl border border-panel-active bg-background p-6">
       <h2 className="font-display text-xl font-semibold text-white">{titulo}</h2>
@@ -63,11 +75,14 @@ function CardShell({ titulo, descricao, children }: { titulo: string; descricao:
   );
 }
 
-function CardParticipantes({ nome }: { nome: string }) {
+export function CardParticipantes({ nome }: { nome: string }) {
   const [dirEIndiretos, setDirEIndiretos] = useState({ diretos: false, indiretos: false });
 
   return (
-    <CardShell titulo="Participantes" descricao={`Selecione os colaboradores que irão receber a ${nome}`}>
+    <CardShell
+      titulo="Participantes"
+      descricao={`Selecione os colaboradores que irão receber a ${nome}`}
+    >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {PARTICIPANTES.map((campo) => (
           <SelectVazio key={campo.id} rotulo={campo.rotulo} placeholder={campo.placeholder} />
@@ -91,7 +106,9 @@ function CardParticipantes({ nome }: { nome: string }) {
           <input
             type="checkbox"
             checked={dirEIndiretos.diretos}
-            onChange={(evento) => setDirEIndiretos((atual) => ({ ...atual, diretos: evento.target.checked }))}
+            onChange={(evento) =>
+              setDirEIndiretos((atual) => ({ ...atual, diretos: evento.target.checked }))
+            }
             className="size-4 accent-[oklch(0.82_0.16_80)]"
           />
           Liderados diretos
@@ -100,7 +117,9 @@ function CardParticipantes({ nome }: { nome: string }) {
           <input
             type="checkbox"
             checked={dirEIndiretos.indiretos}
-            onChange={(evento) => setDirEIndiretos((atual) => ({ ...atual, indiretos: evento.target.checked }))}
+            onChange={(evento) =>
+              setDirEIndiretos((atual) => ({ ...atual, indiretos: evento.target.checked }))
+            }
             className="size-4 accent-[oklch(0.82_0.16_80)]"
           />
           Liderados indiretos
@@ -117,7 +136,7 @@ function CardParticipantes({ nome }: { nome: string }) {
   );
 }
 
-function CardDetalhes({ nome, exemplo }: { nome: string; exemplo: string }) {
+export function CardDetalhes({ nome, exemplo }: { nome: string; exemplo: string }) {
   const [titulo, setTitulo] = useState("");
   const [informacoes, setInformacoes] = useState("");
   const [tipo, setTipo] = useState("");
@@ -136,7 +155,9 @@ function CardDetalhes({ nome, exemplo }: { nome: string; exemplo: string }) {
           placeholder={exemplo}
           className={CAMPO}
         />
-        <span className="text-right font-normal">{titulo.length.toLocaleString("pt-BR")} / 5.000 caracteres</span>
+        <span className="text-right font-normal">
+          {titulo.length.toLocaleString("pt-BR")} / 5.000 caracteres
+        </span>
       </label>
 
       <label className={ROTULO}>
@@ -148,7 +169,9 @@ function CardDetalhes({ nome, exemplo }: { nome: string; exemplo: string }) {
           placeholder="Explique o objetivo e as orientações para participação."
           className={AREA}
         />
-        <span className="text-right font-normal">{informacoes.length.toLocaleString("pt-BR")} / 20.000 caracteres</span>
+        <span className="text-right font-normal">
+          {informacoes.length.toLocaleString("pt-BR")} / 20.000 caracteres
+        </span>
       </label>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -159,7 +182,11 @@ function CardDetalhes({ nome, exemplo }: { nome: string; exemplo: string }) {
 
         <label className={ROTULO}>
           Tipo de Pesquisa
-          <select value={tipo} onChange={(evento) => setTipo(evento.target.value)} className={CAMPO}>
+          <select
+            value={tipo}
+            onChange={(evento) => setTipo(evento.target.value)}
+            className={CAMPO}
+          >
             <option value="" disabled>
               Selecione o tipo de pesquisa
             </option>
@@ -191,15 +218,19 @@ function CardDetalhes({ nome, exemplo }: { nome: string; exemplo: string }) {
   );
 }
 
-function CardPerguntas() {
+export function CardPerguntas() {
   const [perguntas, setPerguntas] = useState<Pergunta[]>([{ id: 1, dimensao: "", tipo: "" }]);
 
   function atualizar(id: number, campo: "dimensao" | "tipo", valor: string) {
-    setPerguntas((lista) => lista.map((item) => (item.id === id ? { ...item, [campo]: valor } : item)));
+    setPerguntas((lista) =>
+      lista.map((item) => (item.id === id ? { ...item, [campo]: valor } : item)),
+    );
   }
 
   function remover(id: number) {
-    setPerguntas((lista) => lista.filter((item) => item.id !== id).map((item, indice) => ({ ...item, id: indice + 1 })));
+    setPerguntas((lista) =>
+      lista.filter((item) => item.id !== id).map((item, indice) => ({ ...item, id: indice + 1 })),
+    );
   }
 
   function adicionar() {
@@ -207,7 +238,10 @@ function CardPerguntas() {
   }
 
   return (
-    <CardShell titulo="Perguntas" descricao="Vincule cada pergunta a uma dimensão e defina o tipo de resposta esperado.">
+    <CardShell
+      titulo="Perguntas"
+      descricao="Vincule cada pergunta a uma dimensão e defina o tipo de resposta esperado."
+    >
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] border-collapse text-sm">
           <thead>
@@ -236,7 +270,9 @@ function CardPerguntas() {
                     <option disabled>Nenhuma opção disponível</option>
                   </select>
                 </td>
-                <td className="px-3 py-3 align-middle font-display text-lg font-semibold text-white">{pergunta.id}</td>
+                <td className="px-3 py-3 align-middle font-display text-lg font-semibold text-white">
+                  {pergunta.id}
+                </td>
                 <td className="px-3 py-3 align-middle">
                   <select
                     aria-label="Tipo de resposta"
@@ -283,12 +319,24 @@ function CardPerguntas() {
   );
 }
 
-export function PaginaPesquisa({ titulo, descricao, exemplo }: { titulo: string; descricao: string; exemplo: string }) {
+export function PaginaPesquisa({
+  titulo,
+  descricao,
+  exemplo,
+  relatorios,
+}: {
+  titulo: string;
+  descricao: string;
+  exemplo: string;
+  relatorios?: ReactNode;
+}) {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
       <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
-        <section className={cn("min-h-[34rem] rounded-2xl border border-panel-active bg-panel p-6 sm:p-8")}>
+        <section
+          className={cn("min-h-[34rem] rounded-2xl border border-panel-active bg-panel p-6 sm:p-8")}
+        >
           <header>
             <h1 className="font-display text-3xl font-semibold text-white">{titulo}</h1>
             <p className="mt-2 max-w-2xl text-sm text-white/80">{descricao}</p>
@@ -300,6 +348,8 @@ export function PaginaPesquisa({ titulo, descricao, exemplo }: { titulo: string;
             <CardPerguntas />
           </div>
         </section>
+
+        {relatorios ? <div className="mt-6 space-y-6">{relatorios}</div> : null}
       </main>
     </div>
   );

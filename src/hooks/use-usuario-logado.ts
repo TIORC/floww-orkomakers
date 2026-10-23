@@ -13,9 +13,17 @@ export type UsuarioLogado = {
   setor: string;
   fotoUrl: string | null;
   acessoMaster: boolean;
+  nivelAcesso: string;
+  ouvidor: boolean;
   cargo: string;
   cargoVisivel: string;
+  gestorDiretoEmail: string;
 };
+
+// Só a Ouvidora atual pode transferir o cargo de Ouvidor.
+export function podeTransferirOuvidor(usuario: UsuarioLogado | null | undefined) {
+  return Boolean(usuario?.ouvidor);
+}
 
 // Perfis que podem ler, editar e desligar colaboradores: Desenvolvedor do Sistema ou Administrador.
 const REGRA_PERFIL_GESTAO = /desenvolvedor do sistema|administrador/i;
@@ -30,6 +38,16 @@ export function podeGerenciarColaboradores(usuario: UsuarioLogado | null | undef
   );
 }
 
+// Quem pode alterar o papel de acesso das pessoas: Desenvolvedor do Sistema (conta mestre) ou Administrador.
+export function podeAlterarPapeis(usuario: UsuarioLogado | null | undefined) {
+  if (!usuario) return false;
+  return (
+    usuario.acessoMaster ||
+    usuario.nivelAcesso === "desenvolvedor" ||
+    usuario.nivelAcesso === "administrador"
+  );
+}
+
 // Busca o colaborador do usuário logado pelo e-mail da conta.
 export function useUsuarioLogado() {
   return useQuery<UsuarioLogado | null>({
@@ -41,7 +59,7 @@ export function useUsuarioLogado() {
 
       const { data, error } = await db
         .from("colaboradores_importados")
-        .select("nome, nome_completo, departamento, foto_url, acesso_master, cargo, cargo_visivel")
+        .select("nome, nome_completo, departamento, foto_url, acesso_master, nivel_acesso, ouvidor, cargo, cargo_visivel, gestor_direto_email")
         .eq("email", email)
         .maybeSingle();
 
@@ -55,8 +73,11 @@ export function useUsuarioLogado() {
         setor: data.departamento,
         fotoUrl: data.foto_url || null,
         acessoMaster: Boolean(data.acesso_master),
+        nivelAcesso: data.nivel_acesso ?? "colaborador",
+        ouvidor: Boolean(data.ouvidor),
         cargo: data.cargo ?? "",
         cargoVisivel: data.cargo_visivel ?? "",
+        gestorDiretoEmail: data.gestor_direto_email ?? "",
       };
     },
   });

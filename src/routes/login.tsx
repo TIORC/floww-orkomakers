@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { emailPermitido, MENSAGEM_DOMINIO_EMAIL } from "@/lib/dominios-email";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -32,6 +33,11 @@ function LoginPage() {
     setCarregando(true);
     setMensagem(null);
     if (criarConta) {
+      if (!emailPermitido(email)) {
+        setCarregando(false);
+        setMensagem(MENSAGEM_DOMINIO_EMAIL);
+        return;
+      }
       const { data, error } = await supabase.auth.signUp({
         email,
         password: senha,

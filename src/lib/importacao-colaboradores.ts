@@ -2,7 +2,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import * as XLSX from "xlsx";
 
 import { supabase } from "@/integrations/supabase/client";
-import { aplicarSomenteAtivos, estaDesligado } from "@/lib/desligamento";
+import {
+  aplicarSomenteAtivos,
+  aplicarSomenteDesativados,
+  aplicarSomenteDesligados,
+  estaDesativado,
+  estaDesligado,
+} from "@/lib/desligamento";
+import { emailPermitido, MENSAGEM_DOMINIO_EMAIL } from "@/lib/dominios-email";
 
 // A tipagem gerada do banco ainda não inclui colaboradores_importados.
 const db = supabase as unknown as SupabaseClient<any>;
@@ -84,6 +91,7 @@ export type ColaboradorImportado = {
   unidade: string;
   fotoUrl: string;
   inativo: boolean;
+  desativado: boolean;
 };
 
 function normalizarTexto(valor: unknown) {
@@ -184,6 +192,7 @@ export function lerPlanilha(arquivo: File) {
             if (!nome) erros.push("Informe o Nome / Nome Completo.");
             if (!dados["ID"]) erros.push("Informe o ID.");
             if (!dados["Email"]) erros.push("Informe o Email.");
+            else if (!emailPermitido(dados["Email"])) erros.push(MENSAGEM_DOMINIO_EMAIL);
             return {
               dados,
               nome,
@@ -320,9 +329,11 @@ export type FiltrosColaboradores = {
   setor: string;
   gestor: string;
   unidade: string;
+  // "ativos" na tela principal; "desligados" e "desativados" nos modais; sem valor, não filtra por situação.
+  status?: "ativos" | "desligados" | "desativados";
 };
 
-// Lista exibida em Cadastro e Desligamento: uma página por vez, com os filtros feitos no banco.
+// Lista de Cadastro e Desligamento e do modal de desligados: uma página por vez, com os filtros feitos no banco.
 export async function listarColaboradoresImportados(
   pagina: number,
   filtros: FiltrosColaboradores,
@@ -337,6 +348,9 @@ export async function listarColaboradoresImportados(
     .order("id", { ascending: true })
     .range(inicio, inicio + COLABORADORES_POR_PAGINA - 1);
 
+  if (filtros.status === "desligados") consulta = aplicarSomenteDesligados(consulta);
+  if (filtros.status === "desativados") consulta = aplicarSomenteDesativados(consulta);
+  if (filtros.status === "ativos") consulta = aplicarSomenteAtivos(consulta);
   if (termo) {
     consulta = consulta.or(
       `nome.ilike.%${termo}%,departamento.ilike.%${termo}%,gestor_direto.ilike.%${termo}%,unidade.ilike.%${termo}%`,
@@ -360,6 +374,7 @@ export async function listarColaboradoresImportados(
     unidade: item["unidade"] ?? "",
     fotoUrl: item["foto_url"] ?? "",
     inativo: estaDesligado({ situacao: item["situacao"] ?? null, desligamento: item["desligamento"] ?? null, ultimo_dia_trabalhado: item["ultimo_dia_trabalhado"] ?? null }),
+    desativado: estaDesativado({ situacao: item["situacao"] ?? null, desligamento: item["desligamento"] ?? null, ultimo_dia_trabalhado: item["ultimo_dia_trabalhado"] ?? null }),
   }));
 
   // Foto do gestor: busca só os gestores desta página, pelo nome.

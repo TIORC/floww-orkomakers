@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { enviarERegistrar, escapar, getAdmin, layout } from "./emails.server";
+import { emailPermitido } from "@/lib/dominios-email";
+import { emailValido, enviarERegistrar, escapar, getAdmin, layout } from "./emails.server";
 
 const ROTULO_EMOCAO: Record<string, string> = { triste: "Triste", muito_triste: "Muito triste" };
 
@@ -76,26 +77,106 @@ export const publicarComunicado = createServerFn({ method: "POST" })
     return { id: com.id, ...resultado };
   });
 
-// Boas-vindas ao colaborador recém-cadastrado (dados lidos do banco, não do navegador).
-export const enviarBoasVindas = createServerFn({ method: "POST" })
+export type StatusConvite = "enviado" | "pulado" | "erro" | "duplicado" | "ja_tem_conta" | "invalido";
+
+// E-mail com o botão que leva a pessoa a criar a senha (usado no convite e nas instruções de primeiro acesso).
+function emailCriarSenha(nome: string, link: string) {
+  return layout(
+    `Boas-vindas, ${nome}!`,
+    `<p>Que bom ter você com a gente. Seu cadastro no Orcoma Orkomakers está pronto.</p>
+     <p>Use o botão abaixo para criar sua senha e entrar no sistema:</p>
+     <p><a href="${link}" style="display:inline-block;background:#facc15;color:#0f172a;padding:12px 20px;border-radius:8px;font-weight:bold;text-decoration:none">Criar minha senha</a></p>
+     <p style="color:#64748b;font-size:12px">Se o botão não funcionar, copie este endereço no navegador: ${escapar(link)}</p>`,
+  );
+}
+
+// Só administradores (ou o Desenvolvedor do Sistema) enviam acessos.
+async function podeGerenciarAcessos(emailQuem: string) {
+  const admin = await getAdmin();
+  const { data: quem } = await admin
+    .from("colaboradores_importados")
+    .select("acesso_master, nivel_acesso")
+    .eq("email", emailQuem)
+    .maybeSingle();
+  const perfil = quem as { acesso_master?: boolean; nivel_acesso?: string } | null;
+  return Boolean(perfil?.acesso_master) || perfil?.nivel_acesso === "desenvolvedor" || perfil?.nivel_acesso === "administrador";
+}
+
+// Cria a conta do colaborador recém-cadastrado e envia o convite por e-mail (Resend) com o link para criar a senha.
+// Só administradores podem convidar. O link leva à tela de login do próprio app.
+export const criarAcessoColaborador = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ email: z.string().trim().max(255) }).parse(d))
-  .handler(async ({ data }) => {
+  .inputValidator((d) =>
+    z.object({ email: z.string().trim().max(255), origem: z.string().trim().url().max(500) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ status: StatusConvite }> => {
+    const email = data.email.toLowerCase();
+    if (!emailValido(email) || !emailPermitido(email)) return { status: "invalido" };
+
+    if (!(await podeGerenciarAcessos((context.claims as { email?: string }).email ?? ""))) {
+      throw new Error("Só administradores podem criar acessos.");
+    }
+
     const admin = await getAdmin();
-    const { data: pessoa } = await admin
-      .from("colaboradores_importados")
-      .select("nome, email")
-      .eq("email", data.email)
-      .maybeSingle();
+    const { data: pessoa } = await admin.from("colaboradores_importados").select("nome").eq("email", email).maybeSingle();
     const nome = (pessoa as { nome?: string } | null)?.nome ?? "";
-    const status = await enviarERegistrar({
-      evento: "boas_vindas",
-      referencia: data.email,
-      destinatario: (pessoa as { email?: string } | null)?.email,
-      assunto: "Boas-vindas à Orcoma!",
-      html: layout(`Boas-vindas, ${nome}!`, `<p>Que bom ter você com a gente. Seu cadastro no Orcoma Orkomakers está pronto.</p>`),
+
+    // Em produção, a URL vem de APP_URL; sem ela, usa a origem de quem fez o cadastro.
+    const base = process.env["APP_URL"] || data.origem;
+    const { data: convite, error } = await admin.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: { redirectTo: `${base}/login` },
     });
-    return { email: status };
+    if (error || !convite?.properties?.action_link) {
+      const jaTemConta = /already|registered|exists/i.test(error?.message ?? "");
+      return { status: jaTemConta ? "ja_tem_conta" : "erro" };
+    }
+
+    const status = await enviarERegistrar({
+      evento: "convite_acesso",
+      referencia: email,
+      destinatario: email,
+      assunto: "Seu acesso ao Orcoma Orkomakers",
+      html: emailCriarSenha(nome, convite.properties.action_link),
+    });
+    return { status };
+  });
+
+// Reenvia as instruções de primeiro acesso para quem já está cadastrado. Quem ainda não tem conta recebe o convite.
+export const enviarPrimeiroAcesso = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ email: z.string().trim().max(255), origem: z.string().trim().url().max(500) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ status: StatusConvite }> => {
+    const email = data.email.toLowerCase();
+    if (!emailValido(email) || !emailPermitido(email)) return { status: "invalido" };
+    if (!(await podeGerenciarAcessos((context.claims as { email?: string }).email ?? ""))) {
+      throw new Error("Só administradores podem enviar instruções de acesso.");
+    }
+
+    const admin = await getAdmin();
+    const { data: pessoa } = await admin.from("colaboradores_importados").select("nome").eq("email", email).maybeSingle();
+    const nome = (pessoa as { nome?: string } | null)?.nome ?? "";
+    const base = process.env["APP_URL"] || data.origem;
+    const redirectTo = `${base}/login`;
+
+    // Conta existente: link de redefinição de senha. Sem conta: convite.
+    let { data: link, error } = await admin.auth.admin.generateLink({ type: "recovery", email, options: { redirectTo } });
+    if (error && /not found/i.test(error.message)) {
+      ({ data: link, error } = await admin.auth.admin.generateLink({ type: "invite", email, options: { redirectTo } }));
+    }
+    if (error || !link?.properties?.action_link) return { status: "erro" };
+
+    const status = await enviarERegistrar({
+      evento: "primeiro_acesso",
+      referencia: `${email}:${Date.now()}`,
+      destinatario: email,
+      assunto: "Instruções de primeiro acesso ao Orcoma Orkomakers",
+      html: emailCriarSenha(nome, link.properties.action_link),
+    });
+    return { status };
   });
 
 // Após o check-in: se o humor de hoje for triste/muito triste, avisa o gestor (1 por pessoa por dia).

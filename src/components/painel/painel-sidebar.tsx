@@ -5,12 +5,15 @@ import {
   BriefcaseBusiness,
   Building2,
   CalendarClock,
+  Clock,
+  CalendarOff,
   ChevronRight,
   ClipboardCheck,
   ClipboardList,
   FileSearch,
   Home,
   History,
+  Hourglass,
   Megaphone,
   MessageSquareText,
   Settings,
@@ -70,6 +73,19 @@ const SECOES_PRINCIPAIS: Secao[] = [
       { label: "Catálogo", icon: ShoppingBag, to: "/catalogo" },
       { label: "Histórico", icon: History, to: "/shop/historico" },
     ],
+  },
+];
+
+const SECOES_DEPARTAMENTO_PESSOAL: Secao[] = [
+  {
+    titulo: "Horas extras e horas faltas",
+    icone: Clock,
+    itens: [{ label: "Horas extras e horas faltas", icon: Clock, to: "/horas-extras-faltas" }],
+  },
+  {
+    titulo: "Banco de Horas",
+    icone: Hourglass,
+    itens: [{ label: "Banco de Horas", icon: Hourglass }],
   },
 ];
 
@@ -227,6 +243,15 @@ export function PainelSidebar() {
         </p>
         <ul className="mt-3 grid gap-1.5">
           {SECOES_RH.map((secao) => (
+            <MenuSecao key={secao.titulo} secao={secao} />
+          ))}
+        </ul>
+
+        <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-panel-label">
+          Departamento Pessoal
+        </p>
+        <ul className="mt-3 grid gap-1.5">
+          {SECOES_DEPARTAMENTO_PESSOAL.map((secao) => (
             <MenuSecao key={secao.titulo} secao={secao} />
           ))}
         </ul>

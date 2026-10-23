@@ -20,6 +20,7 @@ import { FileSpreadsheet, Plus, Search, UsersRound } from "lucide-react";
 
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
 import { CadastrarColaboradorDialog } from "@/components/painel/cadastrar-colaborador-dialog";
+import { DesligadosDialog } from "@/components/painel/desligados-dialog";
 import { PerfilFlutuante } from "@/components/perfil-flutuante";
 
 export const Route = createFileRoute("/cadastro-desligamento")({
@@ -60,6 +61,8 @@ function CadastroDesligamentoPage() {
   const [unidade, setUnidade] = useState("");
   const [cadastrarAberto, setCadastrarAberto] = useState(false);
   const [importarAberto, setImportarAberto] = useState(false);
+  const [desligadosAberto, setDesligadosAberto] = useState(false);
+  const [desativadosAberto, setDesativadosAberto] = useState(false);
   const [detalhe, setDetalhe] = useState<IdentificadorColaborador | null>(null);
   const { data: usuario } = useUsuarioLogado();
   const podeGerenciar = podeGerenciarColaboradores(usuario);
@@ -73,7 +76,7 @@ function CadastroDesligamentoPage() {
     return () => clearTimeout(timer);
   }, [busca]);
 
-  const filtros: FiltrosColaboradores = { busca: buscaAplicada, setor, gestor, unidade };
+  const filtros: FiltrosColaboradores = { busca: buscaAplicada, setor, gestor, unidade, status: "ativos" };
 
   const { data, isPending, isError, isFetching } = useQuery({
     queryKey: [...CHAVE_COLABORADORES, pagina, filtros],
@@ -199,6 +202,20 @@ function CadastroDesligamentoPage() {
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              onClick={() => setDesligadosAberto(true)}
+              className="h-11 rounded-lg bg-red-900 px-4 text-sm font-semibold text-white shadow transition hover:bg-red-800"
+            >
+              Desligados
+            </button>
+            <button
+              type="button"
+              onClick={() => setDesativadosAberto(true)}
+              className="h-11 rounded-lg bg-orange-600 px-4 text-sm font-semibold text-white shadow transition hover:bg-orange-500"
+            >
+              Desativados
+            </button>
           </div>
 
           <div className="mt-6 overflow-x-auto rounded-xl border border-panel-active">
@@ -268,9 +285,19 @@ function CadastroDesligamentoPage() {
                       </td>
                       <td className="px-4 py-3">{colaborador.unidade || "—"}</td>
                       <td className="px-4 py-3">
-                        <span className={colaborador.inativo ? "rounded-full bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-400" : "rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-400"}>
-                          {colaborador.inativo ? "Inativo" : "Ativo"}
-                        </span>
+                        {colaborador.desativado ? (
+                          <span className="rounded-full bg-orange-500/15 px-2.5 py-1 text-xs font-semibold text-orange-400">
+                            Desativado
+                          </span>
+                        ) : colaborador.inativo ? (
+                          <span className="rounded-full bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-400">
+                            Inativo
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-400">
+                            Ativo
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -311,6 +338,18 @@ function CadastroDesligamentoPage() {
         onImportar={importarPlanilha}
       />
       <CadastrarColaboradorDialog aberto={cadastrarAberto} onFechar={() => setCadastrarAberto(false)} />
+      <DesligadosDialog
+        aberto={desligadosAberto}
+        status="desligados"
+        onFechar={() => setDesligadosAberto(false)}
+        onDetalhe={setDetalhe}
+      />
+      <DesligadosDialog
+        aberto={desativadosAberto}
+        status="desativados"
+        onFechar={() => setDesativadosAberto(false)}
+        onDetalhe={setDetalhe}
+      />
       <DetalhesColaboradorDialog
         identificador={detalhe}
         podeGerenciar={podeGerenciar}

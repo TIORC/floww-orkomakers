@@ -59,7 +59,7 @@ export function PerfilFlutuante() {
       initial={{ opacity: 0, y: -16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 260, damping: 26 }}
-      className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-end gap-5 bg-transparent px-6"
+      className="fixed left-64 right-0 top-0 z-40 flex h-16 items-center justify-end gap-5 bg-background/70 px-6 backdrop-blur-md"
     >
       <div className="flex items-center gap-4">
         {ACOES_RAPIDAS.map(({ rotulo, icone: Icone, to }) => (

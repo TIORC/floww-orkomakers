@@ -1,21 +1,43 @@
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, UserMinus, Pencil, X } from "lucide-react";
+import { Loader2, Mail, PauseCircle, UserMinus, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
+
+import { enviarPrimeiroAcesso } from "@/lib/emails.functions";
 
 import {
   atualizarColaborador,
+  atualizarNivelAcesso,
   buscarColaborador,
+  transferirOuvidor,
   desligarColaborador,
+  desativarColaborador,
+  LIMITE_MOTIVO_OUTROS,
+  MOTIVOS_DESATIVACAO,
+  MOTIVOS_DESLIGAMENTO,
+  TIPOS_DESLIGAMENTO,
   type CamposEditaveis,
+  type MotivoDesativacao,
+  type MotivoDesligamento,
+  type NivelAcesso,
   type RegistroColaborador,
+  type TipoDesligamento,
 } from "@/lib/colaborador-detalhe";
+import { SeletorPapeis } from "@/components/painel/seletor-papeis";
+import { podeAlterarPapeis, podeTransferirOuvidor, useUsuarioLogado } from "@/hooks/use-usuario-logado";
 import { getIniciais } from "@/lib/iniciais";
 import { listarSetores } from "@/lib/cargos";
 import { listarPessoasParaGestor } from "@/lib/organograma-dados";
 import { cn } from "@/lib/utils";
 
 export type IdentificadorColaborador = { id: string } | { email: string };
+
+type AbaDetalhes = "informacoes" | "permissoes";
+
+const ABAS_DETALHES: { valor: AbaDetalhes; rotulo: string }[] = [
+  { valor: "informacoes", rotulo: "Informações Gerais" },
+  { valor: "permissoes", rotulo: "Permissões" },
+];
 
 const CAMPO =
   "h-10 w-full rounded-lg border border-panel-active bg-background px-3 text-sm text-white outline-none placeholder:text-white/50 focus-visible:ring-2 focus-visible:ring-brand";
@@ -82,19 +104,37 @@ export function DetalhesColaboradorDialog({
 }) {
   const queryClient = useQueryClient();
   const [modo, setModo] = useState<"ver" | "editar">("ver");
+  const [aba, setAba] = useState<AbaDetalhes>("informacoes");
   const [confirmandoDesligamento, setConfirmandoDesligamento] = useState(false);
+  const [confirmandoDesativacao, setConfirmandoDesativacao] = useState(false);
+  const [motivoDesativacao, setMotivoDesativacao] = useState<MotivoDesativacao | "">("");
+  const [motivoDesativacaoOutros, setMotivoDesativacaoOutros] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [enviandoAcesso, setEnviandoAcesso] = useState(false);
+  const [salvandoNivel, setSalvandoNivel] = useState(false);
   const [form, setForm] = useState<CamposEditaveis | null>(null);
+  const [tipoDesligamento, setTipoDesligamento] = useState<TipoDesligamento | "">("");
+  const [motivoDesligamento, setMotivoDesligamento] = useState<MotivoDesligamento | "">("");
+  const [motivoOutros, setMotivoOutros] = useState("");
 
-  const chave = identificador ? ("id" in identificador ? `id:${identificador.id}` : `email:${identificador.email}`) : "";
+  const chave = identificador
+    ? "id" in identificador
+      ? `id:${identificador.id}`
+      : `email:${identificador.email}`
+    : "";
 
-  const { data: registro, isPending, isError } = useQuery({
+  const {
+    data: registro,
+    isPending,
+    isError,
+  } = useQuery({
     queryKey: ["colaborador-detalhe", chave],
     queryFn: () => buscarColaborador(identificador as IdentificadorColaborador),
     enabled: Boolean(identificador),
   });
 
   const { data: setoresLista = [] } = useQuery({ queryKey: ["setores"], queryFn: listarSetores });
+  const { data: usuarioLogado } = useUsuarioLogado();
   const { data: gestores = [] } = useQuery({
     queryKey: ["pessoas-gestor"],
     queryFn: listarPessoasParaGestor,
@@ -111,9 +151,24 @@ export function DetalhesColaboradorDialog({
 
   if (!identificador) return null;
 
+  function limparDesligamento() {
+    setConfirmandoDesligamento(false);
+    setTipoDesligamento("");
+    setMotivoDesligamento("");
+    setMotivoOutros("");
+  }
+
+  function limparDesativacao() {
+    setConfirmandoDesativacao(false);
+    setMotivoDesativacao("");
+    setMotivoDesativacaoOutros("");
+  }
+
   function fechar() {
     setModo("ver");
-    setConfirmandoDesligamento(false);
+    setAba("informacoes");
+    limparDesligamento();
+    limparDesativacao();
     setForm(null);
     onFechar();
   }
@@ -130,6 +185,38 @@ export function DetalhesColaboradorDialog({
     await queryClient.invalidateQueries({ queryKey: ["organograma"] });
     await queryClient.invalidateQueries({ queryKey: ["colaboradores-diretorio"] });
     await queryClient.invalidateQueries({ queryKey: ["ranking-moedas"] });
+  }
+
+  // Papéis funcionam como escolha única: marcar um desmarca o anterior. Desmarcar sozinho não faz nada.
+  async function alterarNivel(nivel: NivelAcesso) {
+    // O papel Desenvolvedor do Sistema é fixo da conta TI Maracas: não é atribuído nem removido por aqui.
+    if (!registro || nivel === nivelAtual || nivel === "desenvolvedor") return;
+    setSalvandoNivel(true);
+    try {
+      await atualizarNivelAcesso(registro["id"] as string, nivel);
+      await atualizarListas();
+      toast.success("Papel atualizado.");
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível alterar o papel.");
+    } finally {
+      setSalvandoNivel(false);
+    }
+  }
+
+  // Transfere o cargo de Ouvidor para a pessoa aberta no modal (só Administradores podem receber).
+  async function transferirCargoOuvidor() {
+    if (!registro) return;
+    setSalvandoNivel(true);
+    try {
+      await transferirOuvidor(registro["id"] as string);
+      await queryClient.invalidateQueries({ queryKey: ["usuario-logado"] });
+      await atualizarListas();
+      toast.success(`Cargo de Ouvidor transferido para ${registro["nome"]}.`);
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível transferir o cargo.");
+    } finally {
+      setSalvandoNivel(false);
+    }
   }
 
   async function salvarEdicao(evento: FormEvent<HTMLFormElement>) {
@@ -154,11 +241,22 @@ export function DetalhesColaboradorDialog({
     }
   }
 
+  const desligamentoValido = Boolean(
+    tipoDesligamento &&
+    motivoDesligamento &&
+    (motivoDesligamento !== "Outros" || motivoOutros.trim()),
+  );
+
   async function confirmarDesligamento() {
-    if (!registro) return;
+    if (!registro || !tipoDesligamento || !motivoDesligamento) return;
     setSalvando(true);
     try {
-      await desligarColaborador(registro["id"] as string, hojeFormatado());
+      await desligarColaborador(registro["id"] as string, {
+        dataDesligamento: hojeFormatado(),
+        tipo: tipoDesligamento,
+        motivo: motivoDesligamento,
+        motivoOutros,
+      });
       await atualizarListas();
       toast.success(`${registro["nome"]} foi desligado(a).`);
       fechar();
@@ -169,16 +267,63 @@ export function DetalhesColaboradorDialog({
     }
   }
 
-  const desligado = Boolean(registro?.["desligamento"]?.trim() || registro?.["ultimo_dia_trabalhado"]?.trim());
+  // Desativação: afastamento temporário. Pede o motivo e grava a situação como Desativado.
+  const desativacaoValida = Boolean(
+    motivoDesativacao && (motivoDesativacao !== "Outros" || motivoDesativacaoOutros.trim()),
+  );
+
+  async function confirmarDesativacao() {
+    if (!registro || !motivoDesativacao) return;
+    setSalvando(true);
+    try {
+      await desativarColaborador(registro["id"] as string, {
+        motivo: motivoDesativacao,
+        motivoOutros: motivoDesativacaoOutros,
+      });
+      await atualizarListas();
+      toast.success(`${registro["nome"]} foi desativado(a).`);
+      fechar();
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível desativar.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  // Envia o link para criar a senha (conta já existente) ou o convite (conta ainda não criada).
+  async function enviarInstrucoesAcesso() {
+    if (!registro?.["email"]) return;
+    setEnviandoAcesso(true);
+    try {
+      const resultado = await enviarPrimeiroAcesso({
+        data: { email: registro["email"], origem: window.location.origin },
+      });
+      if (resultado.status === "enviado") toast.success(`Instruções de primeiro acesso enviadas para ${registro["email"]}.`);
+      else toast.warning("Não foi possível enviar as instruções de primeiro acesso.");
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível enviar as instruções.");
+    } finally {
+      setEnviandoAcesso(false);
+    }
+  }
+
+  const desligado = Boolean(
+    registro?.["desligamento"]?.trim() || registro?.["ultimo_dia_trabalhado"]?.trim(),
+  );
+  const desativado = registro?.["situacao"]?.trim().toLowerCase() === "desativado";
   const editando = modo === "editar";
+  const nivelAtual = (registro?.["nivel_acesso"] ?? "colaborador") as NivelAcesso;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="presentation">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      role="presentation"
+    >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="detalhes-colaborador-titulo"
-        className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-panel-active bg-panel p-6 shadow-2xl sm:p-8"
+        className="relative max-h-[92vh] w-[95vw] max-w-[96rem] overflow-y-auto rounded-2xl border border-panel-active bg-panel p-6 shadow-2xl sm:p-8"
       >
         <button
           type="button"
@@ -195,19 +340,55 @@ export function DetalhesColaboradorDialog({
           <p className="py-12 text-center text-sm text-white/80">Colaborador não encontrado.</p>
         ) : (
           <>
-            <h2 id="detalhes-colaborador-titulo" className="font-display text-xl font-semibold text-white">
+            <h2
+              id="detalhes-colaborador-titulo"
+              className="font-display text-xl font-semibold text-white"
+            >
               {registro["nome"]}
             </h2>
             <p className="mt-1 text-sm text-white/80">
-              {desligado ? "Desligado(a)" : registro["situacao"] || "Situação não informada"}
+              {desligado
+                ? "Desligado(a)"
+                : desativado
+                  ? "Desativado(a)"
+                  : registro["situacao"] || "Situação não informada"}
             </p>
 
-            {/* Mesmo layout nos dois modos: foto e gestor à esquerda; informações ou formulário à direita. */}
-            <div className="mt-6 grid gap-6 md:grid-cols-[16rem_1fr]">
+            <div role="tablist" aria-label="Seções" className="mt-5 flex justify-center gap-2">
+              {ABAS_DETALHES.map(({ valor, rotulo }) => (
+                <button
+                  key={valor}
+                  type="button"
+                  role="tab"
+                  aria-selected={aba === valor}
+                  onClick={() => setAba(valor)}
+                  className={cn(
+                    "rounded-full px-5 py-2 text-sm font-semibold transition",
+                    aba === valor
+                      ? "bg-brand text-slate-900 shadow"
+                      : "border border-panel-active text-white hover:bg-panel-active",
+                  )}
+                >
+                  {rotulo}
+                </button>
+              ))}
+            </div>
+
+            {/* Informações Gerais: foto, dados e papéis. Permissões: foto, gestor e papéis. */}
+            <div
+              className={cn(
+                "mt-6 grid gap-6 md:grid-cols-[16rem_1fr]",
+                aba === "informacoes" && "xl:grid-cols-[16rem_1fr_26rem]",
+              )}
+            >
               <div className="grid content-start gap-4">
                 <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border border-panel-active bg-background">
                   {registro["foto_url"] ? (
-                    <img src={registro["foto_url"]} alt={`Foto de ${registro["nome"]}`} className="size-full object-cover" />
+                    <img
+                      src={registro["foto_url"]}
+                      alt={`Foto de ${registro["nome"]}`}
+                      className="size-full object-cover"
+                    />
                   ) : (
                     <span className="font-display text-5xl font-bold text-panel-text">
                       {getIniciais(registro["nome"] ?? "") || "—"}
@@ -217,13 +398,21 @@ export function DetalhesColaboradorDialog({
 
                 {emailGestor && (
                   <div className="px-1">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-brand">Responde a:</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-brand">
+                      Responde a:
+                    </p>
                     <div className="mt-3 flex items-center gap-3">
                       <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-panel-active text-sm font-bold text-panel-text">
                         {gestorRegistro?.["foto_url"] ? (
-                          <img src={gestorRegistro["foto_url"]} alt="" className="size-full object-cover" />
+                          <img
+                            src={gestorRegistro["foto_url"]}
+                            alt=""
+                            className="size-full object-cover"
+                          />
                         ) : (
-                          getIniciais(gestorRegistro?.["nome"] || registro["gestor_direto"] || "") || "—"
+                          getIniciais(
+                            gestorRegistro?.["nome"] || registro["gestor_direto"] || "",
+                          ) || "—"
                         )}
                       </span>
                       <div className="min-w-0">
@@ -231,7 +420,9 @@ export function DetalhesColaboradorDialog({
                           {gestorRegistro?.["nome"] || registro["gestor_direto"] || "—"}
                         </p>
                         <p className="break-words text-xs text-panel-label">
-                          {gestorRegistro?.["cargo_visivel"] || gestorRegistro?.["cargo"] || "Cargo não informado"}
+                          {gestorRegistro?.["cargo_visivel"] ||
+                            gestorRegistro?.["cargo"] ||
+                            "Cargo não informado"}
                         </p>
                       </div>
                     </div>
@@ -239,11 +430,13 @@ export function DetalhesColaboradorDialog({
                 )}
               </div>
 
-              {!editando ? (
+              {aba === "informacoes" && (!editando ? (
                 <dl className="grid content-start gap-4 sm:grid-cols-2">
                   {CAMPOS_LEITURA.map(({ coluna, rotulo }) => (
                     <div key={coluna} className="min-w-0">
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-panel-label">{rotulo}</dt>
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-panel-label">
+                        {rotulo}
+                      </dt>
                       <dd className="break-words text-sm text-white">{registro[coluna] || "—"}</dd>
                     </div>
                   ))}
@@ -264,7 +457,9 @@ export function DetalhesColaboradorDialog({
                       Nome completo
                       <input
                         value={form.nome_completo}
-                        onChange={(evento) => setForm({ ...form, nome_completo: evento.target.value })}
+                        onChange={(evento) =>
+                          setForm({ ...form, nome_completo: evento.target.value })
+                        }
                         className={CAMPO}
                       />
                     </label>
@@ -298,24 +493,28 @@ export function DetalhesColaboradorDialog({
                       Cargo visível
                       <input
                         value={form.cargo_visivel}
-                        onChange={(evento) => setForm({ ...form, cargo_visivel: evento.target.value })}
+                        onChange={(evento) =>
+                          setForm({ ...form, cargo_visivel: evento.target.value })
+                        }
                         className={CAMPO}
                       />
                     </label>
                     <label className={ROTULO}>
                       Departamento
                       <select
-                value={form.departamento}
-                onChange={(evento) => setForm({ ...form, departamento: evento.target.value })}
-                className={CAMPO}
-              >
-                <option value="">Selecione um setor</option>
-                {setoresLista.map((setor) => (
-                  <option key={setor} value={setor}>
-                    {setor}
-                  </option>
-                ))}
-              </select>
+                        value={form.departamento}
+                        onChange={(evento) =>
+                          setForm({ ...form, departamento: evento.target.value })
+                        }
+                        className={CAMPO}
+                      >
+                        <option value="">Selecione um setor</option>
+                        {setoresLista.map((setor) => (
+                          <option key={setor} value={setor}>
+                            {setor}
+                          </option>
+                        ))}
+                      </select>
                     </label>
                     <label className={ROTULO}>
                       Unidade
@@ -337,7 +536,9 @@ export function DetalhesColaboradorDialog({
                       Gestor direto
                       <select
                         value={form.gestor_direto_email}
-                        onChange={(evento) => setForm({ ...form, gestor_direto_email: evento.target.value })}
+                        onChange={(evento) =>
+                          setForm({ ...form, gestor_direto_email: evento.target.value })
+                        }
                         className={CAMPO}
                       >
                         <option value="">Sem gestor direto</option>
@@ -368,19 +569,151 @@ export function DetalhesColaboradorDialog({
                     </div>
                   </form>
                 )
-              )}
+              ))}
+
+              <SeletorPapeis
+                nivelAtual={nivelAtual}
+                desabilitado={!podeAlterarPapeis(usuarioLogado) || salvandoNivel}
+                onAlterar={alterarNivel}
+                ouvidor={Boolean(registro["ouvidor"])}
+                podeTransferirOuvidor={podeTransferirOuvidor(usuarioLogado)}
+                onTransferirOuvidor={transferirCargoOuvidor}
+                mostrarNiveis={aba === "informacoes"}
+                mostrarOuvidor={aba === "permissoes"}
+              />
             </div>
+
+            {!editando && podeGerenciar && confirmandoDesativacao && (
+              <div className="mt-8 grid gap-5 border-t border-panel-active pt-5 sm:grid-cols-2">
+                <h3 className="text-base font-semibold text-white sm:col-span-2">
+                  Motivo da desativação
+                </h3>
+                <label className={ROTULO}>
+                  Motivo da desativação
+                  <select
+                    value={motivoDesativacao}
+                    onChange={(evento) =>
+                      setMotivoDesativacao(evento.target.value as MotivoDesativacao | "")
+                    }
+                    className={CAMPO}
+                  >
+                    <option value="">Selecione o motivo</option>
+                    {MOTIVOS_DESATIVACAO.map((motivo) => (
+                      <option key={motivo} value={motivo}>
+                        {motivo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {motivoDesativacao === "Outros" && (
+                  <label className={cn(ROTULO, "sm:col-span-2")}>
+                    Descreva o motivo da desativação
+                    <textarea
+                      value={motivoDesativacaoOutros}
+                      maxLength={LIMITE_MOTIVO_OUTROS}
+                      onChange={(evento) => setMotivoDesativacaoOutros(evento.target.value)}
+                      rows={3}
+                      className={cn(CAMPO, "h-auto py-2")}
+                    />
+                    <span className="text-right text-xs font-normal text-white/70">
+                      {motivoDesativacaoOutros.length.toLocaleString("pt-BR")} /{" "}
+                      {LIMITE_MOTIVO_OUTROS.toLocaleString("pt-BR")} caracteres
+                    </span>
+                  </label>
+                )}
+              </div>
+            )}
+
+            {!editando && podeGerenciar && confirmandoDesligamento && (
+              <div className="mt-8 grid gap-5 border-t border-panel-active pt-5 sm:grid-cols-2">
+                <h3 className="text-base font-semibold text-white sm:col-span-2">
+                  Motivo do desligamento
+                </h3>
+                <label className={ROTULO}>
+                  Motivo do desligamento
+                  <select
+                    value={motivoDesligamento}
+                    onChange={(evento) =>
+                      setMotivoDesligamento(evento.target.value as MotivoDesligamento | "")
+                    }
+                    className={CAMPO}
+                  >
+                    <option value="">Selecione o motivo</option>
+                    {MOTIVOS_DESLIGAMENTO.map((motivo) => (
+                      <option key={motivo} value={motivo}>
+                        {motivo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className={ROTULO}>
+                  Tipo
+                  <select
+                    value={tipoDesligamento}
+                    onChange={(evento) =>
+                      setTipoDesligamento(evento.target.value as TipoDesligamento | "")
+                    }
+                    className={CAMPO}
+                  >
+                    <option value="">Selecione o tipo</option>
+                    {TIPOS_DESLIGAMENTO.map((tipo) => (
+                      <option key={tipo} value={tipo}>
+                        {tipo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {motivoDesligamento === "Outros" && (
+                  <label className={cn(ROTULO, "sm:col-span-2")}>
+                    Descreva os motivos que levaram ao desligamento
+                    <textarea
+                      value={motivoOutros}
+                      maxLength={LIMITE_MOTIVO_OUTROS}
+                      onChange={(evento) => setMotivoOutros(evento.target.value)}
+                      rows={5}
+                      className={cn(CAMPO, "h-auto py-2")}
+                    />
+                    <span className="text-right text-xs font-normal text-white/70">
+                      {motivoOutros.length.toLocaleString("pt-BR")} /{" "}
+                      {LIMITE_MOTIVO_OUTROS.toLocaleString("pt-BR")} caracteres
+                    </span>
+                  </label>
+                )}
+              </div>
+            )}
 
             {!editando && podeGerenciar && (
               <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-panel-active pt-5">
-                {confirmandoDesligamento ? (
+                {confirmandoDesativacao ? (
+                  <>
+                    <span className="self-center text-sm text-white/80">
+                      Confirmar a desativação de {registro["nome"]}?
+                    </span>
+                    <button
+                      type="button"
+                      onClick={limparDesativacao}
+                      className="rounded-lg border border-panel-active px-4 py-2 text-sm font-semibold text-white transition hover:bg-panel-active"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmarDesativacao}
+                      disabled={salvando || !desativacaoValida}
+                      className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-500 disabled:opacity-60"
+                    >
+                      {salvando ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+                      Confirmar desativação
+                    </button>
+                  </>
+                ) : confirmandoDesligamento ? (
                   <>
                     <span className="self-center text-sm text-white/80">
                       Confirmar desligamento em {hojeFormatado()}?
                     </span>
                     <button
                       type="button"
-                      onClick={() => setConfirmandoDesligamento(false)}
+                      onClick={limparDesligamento}
                       className="rounded-lg border border-panel-active px-4 py-2 text-sm font-semibold text-white transition hover:bg-panel-active"
                     >
                       Cancelar
@@ -388,7 +721,7 @@ export function DetalhesColaboradorDialog({
                     <button
                       type="button"
                       onClick={confirmarDesligamento}
-                      disabled={salvando}
+                      disabled={salvando || !desligamentoValido}
                       className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
                     >
                       {salvando ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
@@ -397,6 +730,31 @@ export function DetalhesColaboradorDialog({
                   </>
                 ) : (
                   <>
+                    {registro?.["email"] && (
+                      <button
+                        type="button"
+                        onClick={enviarInstrucoesAcesso}
+                        disabled={enviandoAcesso}
+                        className="inline-flex items-center gap-2 rounded-lg border border-brand px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand/10 disabled:opacity-60"
+                      >
+                        {enviandoAcesso ? (
+                          <Loader2 className="size-4 animate-spin" aria-hidden />
+                        ) : (
+                          <Mail className="size-4" aria-hidden />
+                        )}
+                        Enviar instruções de primeiro acesso (e-mail)
+                      </button>
+                    )}
+                    {!desligado && !desativado && (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmandoDesativacao(true)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-orange-500 px-4 py-2 text-sm font-semibold text-orange-400 transition hover:bg-orange-500/10"
+                      >
+                        <PauseCircle className="size-4" aria-hidden />
+                        Desativar
+                      </button>
+                    )}
                     {!desligado && (
                       <button
                         type="button"
