@@ -1,4 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
+
+import { podeVerMenuRH, useUsuarioLogado } from "@/hooks/use-usuario-logado";
 import {
   BadgeDollarSign,
   BarChart3,
@@ -215,6 +217,8 @@ function MenuSecao({ secao }: { secao: Secao }) {
 export function PainelSidebar() {
   const caminho = useLocation({ select: (local) => local.pathname });
   const inicioAtivo = caminho === "/";
+  const { data: usuario } = useUsuarioLogado();
+  const mostrarRH = podeVerMenuRH(usuario);
 
   return (
     <aside className="sticky top-0 relative z-30 flex h-screen w-64 shrink-0 flex-col self-start border-r border-panel-active bg-panel">
@@ -238,14 +242,18 @@ export function PainelSidebar() {
           ))}
         </ul>
 
-        <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-panel-label">
-          RH
-        </p>
-        <ul className="mt-3 grid gap-1.5">
-          {SECOES_RH.map((secao) => (
-            <MenuSecao key={secao.titulo} secao={secao} />
-          ))}
-        </ul>
+        {mostrarRH && (
+          <>
+            <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-panel-label">
+              RH
+            </p>
+            <ul className="mt-3 grid gap-1.5">
+              {SECOES_RH.map((secao) => (
+                <MenuSecao key={secao.titulo} secao={secao} />
+              ))}
+            </ul>
+          </>
+        )}
 
         <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-panel-label">
           Departamento Pessoal

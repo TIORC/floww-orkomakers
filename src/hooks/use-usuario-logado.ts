@@ -38,6 +38,16 @@ export function podeGerenciarColaboradores(usuario: UsuarioLogado | null | undef
   );
 }
 
+// Menu RH (relatórios, recrutamento, configurações...): só Desenvolvedor do Sistema e Administradores.
+export function podeVerMenuRH(usuario: UsuarioLogado | null | undefined) {
+  if (!usuario) return false;
+  return (
+    usuario.acessoMaster ||
+    usuario.nivelAcesso === "desenvolvedor" ||
+    usuario.nivelAcesso === "administrador"
+  );
+}
+
 // Quem pode alterar o papel de acesso das pessoas: Desenvolvedor do Sistema (conta mestre) ou Administrador.
 export function podeAlterarPapeis(usuario: UsuarioLogado | null | undefined) {
   if (!usuario) return false;

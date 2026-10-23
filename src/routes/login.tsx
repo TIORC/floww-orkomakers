@@ -75,7 +75,7 @@ function LoginPage() {
     }
     setCarregando(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login`,
+      redirectTo: `${window.location.origin}/definir-senha`,
     });
     setCarregando(false);
     setMensagem(error ? "Não foi possível enviar o e-mail de redefinição." : "Enviamos um link de redefinição para o seu e-mail.");

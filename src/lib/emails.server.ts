@@ -10,12 +10,21 @@ export function escapar(texto: string) {
   return texto.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
 
+// Visual das cores do sistema: azul-marinho, azul e amarelo.
 export function layout(titulo: string, corpoHtml: string) {
-  return `<div style="font-family:Arial,sans-serif;background:#ffffff;padding:24px;color:#0f172a">
-  <div style="max-width:560px;margin:0 auto">
-    <p style="color:#1e3a8a;font-weight:bold;margin:0 0 16px">Orcoma Orkomakers</p>
-    <h2 style="margin:0 0 16px">${escapar(titulo)}</h2>
-    ${corpoHtml}
+  return `<div style="font-family:Arial,sans-serif;background:#eef2f7;padding:24px;color:#0f172a">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(15,23,42,0.08)">
+    <div style="background:#0f172a;padding:24px 28px;border-bottom:4px solid #facc15">
+      <p style="color:#facc15;font-weight:bold;font-size:18px;margin:0;letter-spacing:0.5px">Orcoma Orkomakers</p>
+      <p style="color:#93c5fd;font-size:12px;margin:4px 0 0">Gestão de RH</p>
+    </div>
+    <div style="padding:28px">
+      <h2 style="margin:0 0 16px;color:#1e3a8a;font-size:22px">${escapar(titulo)}</h2>
+      <div style="font-size:15px;line-height:1.6">${corpoHtml}</div>
+    </div>
+    <div style="background:#1e3a8a;padding:14px 28px;color:#dbeafe;font-size:12px">
+      Esta é uma mensagem automática do Orcoma Orkomakers. Não responda este e-mail.
+    </div>
   </div></div>`;
 }
 

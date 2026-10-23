@@ -85,8 +85,8 @@ function emailCriarSenha(nome: string, link: string) {
     `Boas-vindas, ${nome}!`,
     `<p>Que bom ter você com a gente. Seu cadastro no Orcoma Orkomakers está pronto.</p>
      <p>Use o botão abaixo para criar sua senha e entrar no sistema:</p>
-     <p><a href="${link}" style="display:inline-block;background:#facc15;color:#0f172a;padding:12px 20px;border-radius:8px;font-weight:bold;text-decoration:none">Criar minha senha</a></p>
-     <p style="color:#64748b;font-size:12px">Se o botão não funcionar, copie este endereço no navegador: ${escapar(link)}</p>`,
+     <p style="margin:24px 0"><a href="${link}" style="display:inline-block;background:#facc15;color:#0f172a;padding:14px 28px;border-radius:10px;font-weight:bold;text-decoration:none;font-size:15px">Criar minha senha</a></p>
+     `,
   );
 }
 
@@ -126,7 +126,7 @@ export const criarAcessoColaborador = createServerFn({ method: "POST" })
     const { data: convite, error } = await admin.auth.admin.generateLink({
       type: "invite",
       email,
-      options: { redirectTo: `${base}/login` },
+      options: { redirectTo: `${base}/definir-senha` },
     });
     if (error || !convite?.properties?.action_link) {
       const jaTemConta = /already|registered|exists/i.test(error?.message ?? "");
@@ -160,7 +160,7 @@ export const enviarPrimeiroAcesso = createServerFn({ method: "POST" })
     const { data: pessoa } = await admin.from("colaboradores_importados").select("nome").eq("email", email).maybeSingle();
     const nome = (pessoa as { nome?: string } | null)?.nome ?? "";
     const base = process.env["APP_URL"] || data.origem;
-    const redirectTo = `${base}/login`;
+    const redirectTo = `${base}/definir-senha`;
 
     // Conta existente: link de redefinição de senha. Sem conta: convite.
     let { data: link, error } = await admin.auth.admin.generateLink({ type: "recovery", email, options: { redirectTo } });

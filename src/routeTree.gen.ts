@@ -16,6 +16,7 @@ import { Route as CargosSalariosRouteImport } from './routes/cargos-salarios'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as ColaboradoresRouteImport } from './routes/colaboradores'
 import { Route as ComunicadosRouteImport } from './routes/comunicados'
+import { Route as DefinirSenhaRouteImport } from './routes/definir-senha'
 import { Route as FeedbacksRouteImport } from './routes/feedbacks'
 import { Route as GamificacaoRouteImport } from './routes/gamificacao'
 import { Route as HorasExtrasFaltasRouteImport } from './routes/horas-extras-faltas'
@@ -71,6 +72,11 @@ const ColaboradoresRoute = ColaboradoresRouteImport.update({
 const ComunicadosRoute = ComunicadosRouteImport.update({
   id: '/comunicados',
   path: '/comunicados',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DefinirSenhaRoute = DefinirSenhaRouteImport.update({
+  id: '/definir-senha',
+  path: '/definir-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeedbacksRoute = FeedbacksRouteImport.update({
@@ -189,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/catalogo': typeof CatalogoRoute
   '/colaboradores': typeof ColaboradoresRoute
   '/comunicados': typeof ComunicadosRoute
+  '/definir-senha': typeof DefinirSenhaRoute
   '/feedbacks': typeof FeedbacksRoute
   '/gamificacao': typeof GamificacaoRouteWithChildren
   '/horas-extras-faltas': typeof HorasExtrasFaltasRoute
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/catalogo': typeof CatalogoRoute
   '/colaboradores': typeof ColaboradoresRoute
   '/comunicados': typeof ComunicadosRoute
+  '/definir-senha': typeof DefinirSenhaRoute
   '/feedbacks': typeof FeedbacksRoute
   '/gamificacao': typeof GamificacaoRouteWithChildren
   '/horas-extras-faltas': typeof HorasExtrasFaltasRoute
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/catalogo': typeof CatalogoRoute
   '/colaboradores': typeof ColaboradoresRoute
   '/comunicados': typeof ComunicadosRoute
+  '/definir-senha': typeof DefinirSenhaRoute
   '/feedbacks': typeof FeedbacksRoute
   '/gamificacao': typeof GamificacaoRouteWithChildren
   '/horas-extras-faltas': typeof HorasExtrasFaltasRoute
@@ -282,6 +291,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/colaboradores'
     | '/comunicados'
+    | '/definir-senha'
     | '/feedbacks'
     | '/gamificacao'
     | '/horas-extras-faltas'
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/colaboradores'
     | '/comunicados'
+    | '/definir-senha'
     | '/feedbacks'
     | '/gamificacao'
     | '/horas-extras-faltas'
@@ -342,6 +353,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/colaboradores'
     | '/comunicados'
+    | '/definir-senha'
     | '/feedbacks'
     | '/gamificacao'
     | '/horas-extras-faltas'
@@ -373,6 +385,7 @@ export interface RootRouteChildren {
   CatalogoRoute: typeof CatalogoRoute
   ColaboradoresRoute: typeof ColaboradoresRoute
   ComunicadosRoute: typeof ComunicadosRoute
+  DefinirSenhaRoute: typeof DefinirSenhaRoute
   FeedbacksRoute: typeof FeedbacksRoute
   GamificacaoRoute: typeof GamificacaoRouteWithChildren
   HorasExtrasFaltasRoute: typeof HorasExtrasFaltasRoute
@@ -443,6 +456,13 @@ declare module '@tanstack/react-router' {
       path: '/comunicados'
       fullPath: '/comunicados'
       preLoaderRoute: typeof ComunicadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/definir-senha': {
+      id: '/definir-senha'
+      path: '/definir-senha'
+      fullPath: '/definir-senha'
+      preLoaderRoute: typeof DefinirSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/feedbacks': {
@@ -628,6 +648,7 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogoRoute: CatalogoRoute,
   ColaboradoresRoute: ColaboradoresRoute,
   ComunicadosRoute: ComunicadosRoute,
+  DefinirSenhaRoute: DefinirSenhaRoute,
   FeedbacksRoute: FeedbacksRoute,
   GamificacaoRoute: GamificacaoRouteWithChildren,
   HorasExtrasFaltasRoute: HorasExtrasFaltasRoute,
