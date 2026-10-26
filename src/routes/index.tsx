@@ -64,7 +64,7 @@ function Index() {
           alt="Aniversariantes do mês de outubro"
           width={BANNER_WIDTH}
           height={BANNER_HEIGHT}
-          className="relative -left-6 mt-8 ml-auto h-auto max-w-full rounded-md"
+          className="relative -left-6 mt-8 ml-auto block h-auto w-full max-w-full rounded-md"
         />
         <div className="logo-marquee -mx-10 mt-10 overflow-hidden">
           <div className="logo-marquee-track flex w-max items-center">

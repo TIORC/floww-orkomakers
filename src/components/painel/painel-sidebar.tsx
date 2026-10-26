@@ -1,19 +1,23 @@
 import { Link, useLocation } from "@tanstack/react-router";
 
-import { podeVerMenuRH, useUsuarioLogado } from "@/hooks/use-usuario-logado";
+import { useRegistrarPresenca } from "@/lib/presenca";
+import { podeVerMenuRH, podeVerProgramacaoFerias, useUsuarioLogado } from "@/hooks/use-usuario-logado";
 import {
   BadgeDollarSign,
   BarChart3,
   BriefcaseBusiness,
   Building2,
   CalendarClock,
+  CalendarDays,
   Clock,
   CalendarOff,
   ChevronRight,
   ClipboardCheck,
   ClipboardList,
   FileSearch,
+  GraduationCap,
   Home,
+  LayoutDashboard,
   History,
   Hourglass,
   Megaphone,
@@ -87,7 +91,20 @@ const SECOES_DEPARTAMENTO_PESSOAL: Secao[] = [
   {
     titulo: "Banco de Horas",
     icone: Hourglass,
-    itens: [{ label: "Banco de Horas", icon: Hourglass }],
+    itens: [{ label: "Banco de Horas", icon: Hourglass, to: "/banco-de-horas" }],
+  },
+  {
+    titulo: "Programação de Férias",
+    icone: CalendarDays,
+    itens: [{ label: "Programação de Férias", icon: CalendarDays, to: "/programacao-ferias" }],
+  },
+];
+
+const SECOES_ACADEMY: Secao[] = [
+  {
+    titulo: "Dashboard",
+    icone: LayoutDashboard,
+    itens: [{ label: "Dashboard", icon: LayoutDashboard, to: "/academy" }],
   },
 ];
 
@@ -219,6 +236,7 @@ export function PainelSidebar() {
   const inicioAtivo = caminho === "/";
   const { data: usuario } = useUsuarioLogado();
   const mostrarRH = podeVerMenuRH(usuario);
+  useRegistrarPresenca();
 
   return (
     <aside className="sticky top-0 relative z-30 flex h-screen w-64 shrink-0 flex-col self-start border-r border-panel-active bg-panel">
@@ -242,6 +260,16 @@ export function PainelSidebar() {
           ))}
         </ul>
 
+        <p className="flex items-center gap-1.5 px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-panel-label">
+          <GraduationCap className="size-3.5" aria-hidden />
+          Academy
+        </p>
+        <ul className="mt-3 grid gap-1.5">
+          {SECOES_ACADEMY.map((secao) => (
+            <MenuSecao key={secao.titulo} secao={secao} />
+          ))}
+        </ul>
+
         {mostrarRH && (
           <>
             <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-panel-label">
@@ -259,7 +287,9 @@ export function PainelSidebar() {
           Departamento Pessoal
         </p>
         <ul className="mt-3 grid gap-1.5">
-          {SECOES_DEPARTAMENTO_PESSOAL.map((secao) => (
+          {SECOES_DEPARTAMENTO_PESSOAL.filter(
+            (secao) => secao.titulo !== "Programação de Férias" || podeVerProgramacaoFerias(usuario),
+          ).map((secao) => (
             <MenuSecao key={secao.titulo} secao={secao} />
           ))}
         </ul>

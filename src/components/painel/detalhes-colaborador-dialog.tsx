@@ -70,6 +70,20 @@ const CAMPOS_LEITURA: { coluna: string; rotulo: string }[] = [
   { coluna: "ultimo_dia_trabalhado", rotulo: "Último dia trabalhado" },
 ];
 
+// Data e hora atuais no formato do campo datetime-local (AAAA-MM-DDTHH:MM), usado como mínimo.
+function horaLocalAtual() {
+  const agora = new Date();
+  agora.setSeconds(0, 0);
+  return new Date(agora.getTime() - agora.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+// Mostra um timestamp do banco como DD/MM/AAAA HH:MM, no horário local.
+function formatarDataHora(valor: string) {
+  const data = new Date(valor);
+  if (Number.isNaN(data.getTime())) return valor;
+  return data.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
 // Data de hoje no formato da planilha (DD/MM/AAAA).
 function hojeFormatado() {
   const agora = new Date();
@@ -110,9 +124,11 @@ export function DetalhesColaboradorDialog({
   const [confirmandoDesativacao, setConfirmandoDesativacao] = useState(false);
   const [motivoDesativacao, setMotivoDesativacao] = useState<MotivoDesativacao | "">("");
   const [motivoDesativacaoOutros, setMotivoDesativacaoOutros] = useState("");
+  const [desativacaoAte, setDesativacaoAte] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [enviandoAcesso, setEnviandoAcesso] = useState(false);
   const [acessoEnviado, setAcessoEnviado] = useState(false);
+  const [confirmandoSaida, setConfirmandoSaida] = useState(false);
 
   // Mostra a confirmação verde por 4 segundos e volta ao botão normal.
   useEffect(() => {
@@ -171,9 +187,31 @@ export function DetalhesColaboradorDialog({
     setConfirmandoDesativacao(false);
     setMotivoDesativacao("");
     setMotivoDesativacaoOutros("");
+    setDesativacaoAte("");
+  }
+
+  // Há algo preenchido ou em edição que se perde ao sair.
+  const temInformacoesPendentes = Boolean(
+    (modo === "editar" && registro && form && JSON.stringify(form) !== JSON.stringify(formularioInicial(registro))) ||
+      tipoDesligamento ||
+      motivoDesligamento ||
+      motivoOutros.trim() ||
+      motivoDesativacao ||
+      motivoDesativacaoOutros.trim() ||
+      desativacaoAte,
+  );
+
+  // Clique fora ou no X: pede confirmação se houver informações sendo editadas.
+  function tentarFechar() {
+    if (temInformacoesPendentes) {
+      setConfirmandoSaida(true);
+      return;
+    }
+    fechar();
   }
 
   function fechar() {
+    setConfirmandoSaida(false);
     setModo("ver");
     setAba("informacoes");
     limparDesligamento();
@@ -280,7 +318,9 @@ export function DetalhesColaboradorDialog({
 
   // Desativação: afastamento temporário. Pede o motivo e grava a situação como Desativado.
   const desativacaoValida = Boolean(
-    motivoDesativacao && (motivoDesativacao !== "Outros" || motivoDesativacaoOutros.trim()),
+    motivoDesativacao &&
+      (motivoDesativacao !== "Outros" || motivoDesativacaoOutros.trim()) &&
+      desativacaoAte,
   );
 
   async function confirmarDesativacao() {
@@ -290,6 +330,7 @@ export function DetalhesColaboradorDialog({
       await desativarColaborador(registro["id"] as string, {
         motivo: motivoDesativacao,
         motivoOutros: motivoDesativacaoOutros,
+        ate: desativacaoAte,
       });
       await atualizarListas();
       toast.success(`${registro["nome"]} foi desativado(a).`);
@@ -329,6 +370,9 @@ export function DetalhesColaboradorDialog({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       role="presentation"
+      onClick={(evento) => {
+        if (evento.target === evento.currentTarget && !confirmandoSaida) tentarFechar();
+      }}
     >
       <div
         role="dialog"
@@ -339,7 +383,7 @@ export function DetalhesColaboradorDialog({
         <button
           type="button"
           aria-label="Fechar"
-          onClick={fechar}
+          onClick={tentarFechar}
           className="absolute right-4 top-4 rounded-md p-1.5 text-white/80 transition hover:bg-panel-active hover:text-white"
         >
           <X className="size-5" aria-hidden />
@@ -361,7 +405,9 @@ export function DetalhesColaboradorDialog({
               {desligado
                 ? "Desligado(a)"
                 : desativado
-                  ? "Desativado(a)"
+                  ? registro["desativacao_ate"]
+                    ? `Desativado(a) até ${formatarDataHora(registro["desativacao_ate"])}`
+                    : "Desativado(a)"
                   : registro["situacao"] || "Situação não informada"}
             </p>
 
@@ -616,6 +662,17 @@ export function DetalhesColaboradorDialog({
                     ))}
                   </select>
                 </label>
+                <label className={ROTULO}>
+                  Desativado até
+                  <input
+                    type="datetime-local"
+                    value={desativacaoAte}
+                    min={horaLocalAtual()}
+                    onChange={(evento) => setDesativacaoAte(evento.target.value)}
+                    className={CAMPO}
+                  />
+                  <span className="text-xs font-normal text-white/70">Data e hora prevista para o retorno ou fim do afastamento.</span>
+                </label>
                 {motivoDesativacao === "Outros" && (
                   <label className={cn(ROTULO, "sm:col-span-2")}>
                     Descreva o motivo da desativação
@@ -822,6 +879,41 @@ export function DetalhesColaboradorDialog({
           </>
         )}
       </div>
+
+      {confirmandoSaida && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="alerta-saida-titulo"
+            aria-describedby="alerta-saida-texto"
+            className="w-full max-w-md rounded-2xl border border-panel-active bg-panel p-6 shadow-2xl"
+          >
+            <h3 id="alerta-saida-titulo" className="font-display text-lg font-semibold text-white">
+              Há informações sendo importadas aí!
+            </h3>
+            <p id="alerta-saida-texto" className="mt-3 text-sm text-white/80">
+              Ao sair, você perderá tudo! Tem certeza que deseja sair?
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmandoSaida(false)}
+                className="rounded-lg border border-panel-active px-4 py-2 text-sm font-semibold text-white transition hover:bg-panel-active"
+              >
+                Não, quero continuar editando
+              </button>
+              <button
+                type="button"
+                onClick={fechar}
+                className="rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                Sim, quero sair
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

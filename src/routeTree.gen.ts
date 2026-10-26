@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AcademyRouteImport } from './routes/academy'
 import { Route as AvaliacoesRouteImport } from './routes/avaliacoes'
+import { Route as BancoDeHorasRouteImport } from './routes/banco-de-horas'
 import { Route as CadastroDesligamentoRouteImport } from './routes/cadastro-desligamento'
 import { Route as CargosSalariosRouteImport } from './routes/cargos-salarios'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
@@ -30,6 +32,7 @@ import { Route as PesquisaRapidaRouteImport } from './routes/pesquisa-rapida'
 import { Route as PesquisaSatisfacaoRouteImport } from './routes/pesquisa-satisfacao'
 import { Route as PlanosDesenvolvimentoRouteImport } from './routes/planos-desenvolvimento'
 import { Route as ProcessosSeletivosRouteImport } from './routes/processos-seletivos'
+import { Route as ProgramacaoFeriasRouteImport } from './routes/programacao-ferias'
 import { Route as RelatoriosGeraisRouteImport } from './routes/relatorios-gerais'
 import { Route as Reunioes11RouteImport } from './routes/reunioes-1-1'
 import { Route as SetoresRouteImport } from './routes/setores'
@@ -44,9 +47,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcademyRoute = AcademyRouteImport.update({
+  id: '/academy',
+  path: '/academy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AvaliacoesRoute = AvaliacoesRouteImport.update({
   id: '/avaliacoes',
   path: '/avaliacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BancoDeHorasRoute = BancoDeHorasRouteImport.update({
+  id: '/banco-de-horas',
+  path: '/banco-de-horas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CadastroDesligamentoRoute = CadastroDesligamentoRouteImport.update({
@@ -145,6 +158,11 @@ const ProcessosSeletivosRoute = ProcessosSeletivosRouteImport.update({
   path: '/processos-seletivos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProgramacaoFeriasRoute = ProgramacaoFeriasRouteImport.update({
+  id: '/programacao-ferias',
+  path: '/programacao-ferias',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RelatoriosGeraisRoute = RelatoriosGeraisRouteImport.update({
   id: '/relatorios-gerais',
   path: '/relatorios-gerais',
@@ -189,7 +207,9 @@ const ShopHistoricoRoute = ShopHistoricoRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/academy': typeof AcademyRoute
   '/avaliacoes': typeof AvaliacoesRoute
+  '/banco-de-horas': typeof BancoDeHorasRoute
   '/cadastro-desligamento': typeof CadastroDesligamentoRoute
   '/cargos-salarios': typeof CargosSalariosRoute
   '/catalogo': typeof CatalogoRoute
@@ -209,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/pesquisa-satisfacao': typeof PesquisaSatisfacaoRoute
   '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRouteWithChildren
   '/processos-seletivos': typeof ProcessosSeletivosRoute
+  '/programacao-ferias': typeof ProgramacaoFeriasRoute
   '/relatorios-gerais': typeof RelatoriosGeraisRoute
   '/reunioes-1-1': typeof Reunioes11Route
   '/setores': typeof SetoresRoute
@@ -220,7 +241,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/academy': typeof AcademyRoute
   '/avaliacoes': typeof AvaliacoesRoute
+  '/banco-de-horas': typeof BancoDeHorasRoute
   '/cadastro-desligamento': typeof CadastroDesligamentoRoute
   '/cargos-salarios': typeof CargosSalariosRoute
   '/catalogo': typeof CatalogoRoute
@@ -240,6 +263,7 @@ export interface FileRoutesByTo {
   '/pesquisa-satisfacao': typeof PesquisaSatisfacaoRoute
   '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRouteWithChildren
   '/processos-seletivos': typeof ProcessosSeletivosRoute
+  '/programacao-ferias': typeof ProgramacaoFeriasRoute
   '/relatorios-gerais': typeof RelatoriosGeraisRoute
   '/reunioes-1-1': typeof Reunioes11Route
   '/setores': typeof SetoresRoute
@@ -252,7 +276,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/academy': typeof AcademyRoute
   '/avaliacoes': typeof AvaliacoesRoute
+  '/banco-de-horas': typeof BancoDeHorasRoute
   '/cadastro-desligamento': typeof CadastroDesligamentoRoute
   '/cargos-salarios': typeof CargosSalariosRoute
   '/catalogo': typeof CatalogoRoute
@@ -272,6 +298,7 @@ export interface FileRoutesById {
   '/pesquisa-satisfacao': typeof PesquisaSatisfacaoRoute
   '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRouteWithChildren
   '/processos-seletivos': typeof ProcessosSeletivosRoute
+  '/programacao-ferias': typeof ProgramacaoFeriasRoute
   '/relatorios-gerais': typeof RelatoriosGeraisRoute
   '/reunioes-1-1': typeof Reunioes11Route
   '/setores': typeof SetoresRoute
@@ -285,7 +312,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/academy'
     | '/avaliacoes'
+    | '/banco-de-horas'
     | '/cadastro-desligamento'
     | '/cargos-salarios'
     | '/catalogo'
@@ -305,6 +334,7 @@ export interface FileRouteTypes {
     | '/pesquisa-satisfacao'
     | '/planos-desenvolvimento'
     | '/processos-seletivos'
+    | '/programacao-ferias'
     | '/relatorios-gerais'
     | '/reunioes-1-1'
     | '/setores'
@@ -316,7 +346,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/academy'
     | '/avaliacoes'
+    | '/banco-de-horas'
     | '/cadastro-desligamento'
     | '/cargos-salarios'
     | '/catalogo'
@@ -336,6 +368,7 @@ export interface FileRouteTypes {
     | '/pesquisa-satisfacao'
     | '/planos-desenvolvimento'
     | '/processos-seletivos'
+    | '/programacao-ferias'
     | '/relatorios-gerais'
     | '/reunioes-1-1'
     | '/setores'
@@ -347,7 +380,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/academy'
     | '/avaliacoes'
+    | '/banco-de-horas'
     | '/cadastro-desligamento'
     | '/cargos-salarios'
     | '/catalogo'
@@ -367,6 +402,7 @@ export interface FileRouteTypes {
     | '/pesquisa-satisfacao'
     | '/planos-desenvolvimento'
     | '/processos-seletivos'
+    | '/programacao-ferias'
     | '/relatorios-gerais'
     | '/reunioes-1-1'
     | '/setores'
@@ -379,7 +415,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcademyRoute: typeof AcademyRoute
   AvaliacoesRoute: typeof AvaliacoesRoute
+  BancoDeHorasRoute: typeof BancoDeHorasRoute
   CadastroDesligamentoRoute: typeof CadastroDesligamentoRoute
   CargosSalariosRoute: typeof CargosSalariosRoute
   CatalogoRoute: typeof CatalogoRoute
@@ -399,6 +437,7 @@ export interface RootRouteChildren {
   PesquisaSatisfacaoRoute: typeof PesquisaSatisfacaoRoute
   PlanosDesenvolvimentoRoute: typeof PlanosDesenvolvimentoRouteWithChildren
   ProcessosSeletivosRoute: typeof ProcessosSeletivosRoute
+  ProgramacaoFeriasRoute: typeof ProgramacaoFeriasRoute
   RelatoriosGeraisRoute: typeof RelatoriosGeraisRoute
   Reunioes11Route: typeof Reunioes11Route
   SetoresRoute: typeof SetoresRoute
@@ -416,11 +455,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/academy': {
+      id: '/academy'
+      path: '/academy'
+      fullPath: '/academy'
+      preLoaderRoute: typeof AcademyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/avaliacoes': {
       id: '/avaliacoes'
       path: '/avaliacoes'
       fullPath: '/avaliacoes'
       preLoaderRoute: typeof AvaliacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/banco-de-horas': {
+      id: '/banco-de-horas'
+      path: '/banco-de-horas'
+      fullPath: '/banco-de-horas'
+      preLoaderRoute: typeof BancoDeHorasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cadastro-desligamento': {
@@ -556,6 +609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProcessosSeletivosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/programacao-ferias': {
+      id: '/programacao-ferias'
+      path: '/programacao-ferias'
+      fullPath: '/programacao-ferias'
+      preLoaderRoute: typeof ProgramacaoFeriasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/relatorios-gerais': {
       id: '/relatorios-gerais'
       path: '/relatorios-gerais'
@@ -642,7 +702,9 @@ const PlanosDesenvolvimentoRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcademyRoute: AcademyRoute,
   AvaliacoesRoute: AvaliacoesRoute,
+  BancoDeHorasRoute: BancoDeHorasRoute,
   CadastroDesligamentoRoute: CadastroDesligamentoRoute,
   CargosSalariosRoute: CargosSalariosRoute,
   CatalogoRoute: CatalogoRoute,
@@ -662,6 +724,7 @@ const rootRouteChildren: RootRouteChildren = {
   PesquisaSatisfacaoRoute: PesquisaSatisfacaoRoute,
   PlanosDesenvolvimentoRoute: PlanosDesenvolvimentoRouteWithChildren,
   ProcessosSeletivosRoute: ProcessosSeletivosRoute,
+  ProgramacaoFeriasRoute: ProgramacaoFeriasRoute,
   RelatoriosGeraisRoute: RelatoriosGeraisRoute,
   Reunioes11Route: Reunioes11Route,
   SetoresRoute: SetoresRoute,

@@ -153,12 +153,17 @@ export type MotivoDesativacao = (typeof MOTIVOS_DESATIVACAO)[number];
 // Não preenche desligamento nem último dia trabalhado, então não entra nos relatórios de turnover.
 export async function desativarColaborador(
   id: string,
-  dados: { motivo: MotivoDesativacao; motivoOutros: string },
+  dados: { motivo: MotivoDesativacao; motivoOutros: string; ate: string },
 ) {
   const descricaoOutros = dados.motivoOutros.trim();
   if (dados.motivo === "Outros" && !descricaoOutros) {
     throw new Error("Descreva o motivo em Outros.");
   }
+  // Data e hora vindas do campo datetime-local (AAAA-MM-DDTHH:MM). Precisa estar preenchida.
+  if (!dados.ate) {
+    throw new Error("Informe até quando a pessoa ficará desativada.");
+  }
+  const ateIso = new Date(dados.ate).toISOString();
 
   const { error } = await db
     .from("colaboradores_importados")
@@ -166,6 +171,7 @@ export async function desativarColaborador(
       situacao: "Desativado",
       motivo_desativacao: dados.motivo,
       motivo_desativacao_outros: dados.motivo === "Outros" ? descricaoOutros : "",
+      desativacao_ate: ateIso,
     })
     .eq("id", id);
   if (error) throw error;
