@@ -50,7 +50,7 @@ export function CardTaxaPeriodo({
             <Tooltip
               formatter={(valor: number) => [formatarPorcentagem(valor), "Taxa de turnover"]}
               contentStyle={{
-                background: "var(--background)",
+                background: "#f8fafc", color: "#0f172a",
                 border: "1px solid var(--panel-active)",
                 borderRadius: 8,
               }}

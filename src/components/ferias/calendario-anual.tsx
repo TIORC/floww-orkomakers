@@ -22,7 +22,13 @@ type Props = {
   aoEscolherDia?: (iso: string) => void;
   // Datas que não podem ser o primeiro dia do período: devolve o motivo, ou null se pode. Não vale para o último dia.
   motivoDeBloqueioDoInicio?: (iso: string) => string | null;
+  // Períodos já programados para a pessoa; aparecem com contorno, sem se confundir com a seleção.
+  programados?: PeriodoProgramadoCalendario[];
+  // Relatórios podem olhar datas passadas; a programação de férias não.
+  permitirPassado?: boolean;
 };
+
+export type PeriodoProgramadoCalendario = { inicio: string; fim: string };
 
 type PropsMes = {
   ano: number;
@@ -32,6 +38,8 @@ type PropsMes = {
   previa: string | null;
   aoEscolherDia: ((iso: string) => void) | undefined;
   motivoDeBloqueioDoInicio: ((iso: string) => string | null) | undefined;
+  programados: PeriodoProgramadoCalendario[];
+  permitirPassado: boolean;
   aoPassarPor: (iso: string | null) => void;
 };
 
@@ -43,6 +51,8 @@ function Mes({
   previa,
   aoEscolherDia,
   motivoDeBloqueioDoInicio,
+  programados,
+  permitirPassado,
   aoPassarPor,
 }: PropsMes) {
   const semanas = semanasDoMes(ano, mes);
@@ -87,10 +97,11 @@ function Mes({
               {semana.map((dia, j) => {
                 if (!dia) return <td key={j} className="p-0.5" />;
                 const iso = paraIso(ano, mes, dia);
-                const passado = iso < hoje;
+                const passado = !permitirPassado && iso < hoje;
                 const ehInicio = iso === inicioDoPeriodo;
                 const ehFim = periodo !== null && iso === periodo.fim;
                 const dentro = periodo !== null && iso >= periodo.inicio && iso <= periodo.fim;
+                const programado = programados.some((p) => iso >= p.inicio && iso <= p.fim);
                 const feriado = nomeDoFeriado(iso);
                 const bloqueio = escolhendoInicio ? motivoDeBloqueioDoInicio?.(iso) : null;
                 const desabilitado = passado || !!bloqueio;
@@ -105,6 +116,7 @@ function Mes({
                   feriado && "bg-red-500/15 font-semibold text-red-400",
                   iso === hoje && "ring-2 ring-brand",
                   dentro && "bg-brand/25 text-white",
+                  programado && "ring-1 ring-inset ring-brand",
                   (ehInicio || ehFim) && "bg-brand font-bold text-slate-900",
                 );
                 return (
@@ -155,6 +167,8 @@ export function CalendarioAnual({
   selecao,
   aoEscolherDia,
   motivoDeBloqueioDoInicio,
+  programados = [],
+  permitirPassado = false,
 }: Props) {
   const hoje = hojeIso();
   const anoAtual = Number(hoje.slice(0, 4));
@@ -192,6 +206,10 @@ export function CalendarioAnual({
           </button>
         )}
         <span className="ml-auto inline-flex items-center gap-2 text-sm text-white/70">
+          <span className="size-3 rounded ring-1 ring-inset ring-brand" aria-hidden />
+          Férias programadas
+        </span>
+        <span className="inline-flex items-center gap-2 text-sm text-white/70">
           <span className="size-3 rounded bg-red-500/40 ring-1 ring-red-400" aria-hidden />
           Feriado (passe o mouse para ver o nome)
         </span>
@@ -208,6 +226,8 @@ export function CalendarioAnual({
             previa={previa}
             aoEscolherDia={aoEscolherDia}
             motivoDeBloqueioDoInicio={motivoDeBloqueioDoInicio}
+            programados={programados}
+            permitirPassado={permitirPassado}
             aoPassarPor={setPrevia}
           />
         ))}

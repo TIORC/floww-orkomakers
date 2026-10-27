@@ -69,14 +69,18 @@ function Index() {
         <div className="logo-marquee -mx-10 mt-10 overflow-hidden">
           <div className="logo-marquee-track flex w-max items-center">
             {[...logoGroup, ...logoGroup].map((logo, i) => (
-              <img
-                key={i}
-                src={logo.src}
-                alt={i < logoGroup.length ? logo.alt : ""}
-                aria-hidden={i >= logoGroup.length || undefined}
-                decoding="async"
-                className={`logo-marquee-item mx-10 ${logo.altura ?? "h-16"} w-auto shrink-0 object-contain`}
-              />
+              // Caixa de tamanho fixo: a largura não muda quando a imagem carrega, então o trilho não pula.
+              <div key={i} className="mx-10 flex h-20 w-48 shrink-0 items-center justify-center">
+                <img
+                  src={logo.src}
+                  alt={i < logoGroup.length ? logo.alt : ""}
+                  aria-hidden={i >= logoGroup.length || undefined}
+                  width={192}
+                  height={80}
+                  decoding="async"
+                  className="logo-marquee-item max-h-full max-w-full object-contain"
+                />
+              </div>
             ))}
           </div>
         </div>

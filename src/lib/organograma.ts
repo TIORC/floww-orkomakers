@@ -7,6 +7,7 @@ export type PessoaOrganograma = {
   gestorEmail: string;
   papel: string;
   fotoUrl: string | null;
+  dataAdmissao: string;
 };
 
 // Gestor (líder de setor) é quem está cadastrado com esse papel na planilha.

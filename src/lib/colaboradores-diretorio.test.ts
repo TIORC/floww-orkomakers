@@ -13,6 +13,8 @@ const pessoa = (id: string, nivelAcesso = "colaborador", gestorEmail = ""): Cola
   fotoUrl: "",
   nivelAcesso,
   gestorEmail,
+  dataAdmissao: "",
+  subliderArea: "",
 });
 
 describe("separarLideres", () => {

@@ -2,7 +2,7 @@ import { CalendarCheck, Clock, FlaskConical } from "lucide-react";
 
 import type { SelecaoPeriodo } from "@/components/ferias/calendario-anual";
 import { dataBr, diaDeRetorno, diasDoPeriodo, ordenarPeriodo } from "@/lib/calendario";
-import { REGRA_INICIO_DAS_FERIAS } from "@/lib/ferias-regras";
+import { REGRA_EPOCA_DAS_FERIAS, REGRA_INICIO_DAS_FERIAS } from "@/lib/ferias-regras";
 import {
   ROTULO_STATUS,
   mensagemDaSolicitacao,
@@ -10,7 +10,7 @@ import {
 } from "@/lib/ferias-solicitacao";
 
 const DEMONSTRACAO = (
-  <span className="inline-flex items-center gap-1 rounded-full border border-brand/60 px-2 py-0.5 text-xs font-semibold text-brand">
+  <span className="inline-flex items-center gap-1 rounded-full border border-slate-900/60 px-2 py-0.5 text-xs font-semibold text-slate-900">
     <FlaskConical className="size-3" aria-hidden />
     Demonstração
   </span>
@@ -30,40 +30,41 @@ export function ResumoSelecao({ selecao, aoSolicitar, aoLimpar }: PropsResumo) {
   return (
     <div
       role="status"
-      className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-brand/50 bg-brand/10 p-4"
+      className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-brand bg-brand p-4 text-slate-900"
     >
       <div className="min-w-0">
-        <p className="flex items-center gap-2 text-sm font-semibold text-white">
+        <p className="flex items-center gap-2 text-sm font-semibold text-slate-900">
           Solicitar férias {DEMONSTRACAO}
         </p>
         {!selecao.inicio ? (
-          <p className="mt-1 text-sm text-white/80">
+          <p className="mt-1 text-sm text-slate-900/80">
             Clique no primeiro dia das suas férias. {REGRA_INICIO_DAS_FERIAS}
           </p>
         ) : !periodo ? (
-          <p className="mt-1 text-sm text-white/80">
-            Início em <strong className="text-white">{dataBr(selecao.inicio)}</strong>. Agora clique
+          <p className="mt-1 text-sm text-slate-900/80">
+            Início em <strong className="text-slate-900">{dataBr(selecao.inicio)}</strong>. Agora clique
             no último dia.
           </p>
         ) : (
-          <p className="mt-1 text-sm text-white/80">
-            De <strong className="text-white">{dataBr(periodo.inicio)}</strong> a{" "}
-            <strong className="text-white">{dataBr(periodo.fim)}</strong>:{" "}
-            <strong className="text-brand">
+          <p className="mt-1 text-sm text-slate-900/80">
+            De <strong className="text-slate-900">{dataBr(periodo.inicio)}</strong> a{" "}
+            <strong className="text-slate-900">{dataBr(periodo.fim)}</strong>:{" "}
+            <strong className="text-slate-900">
               {diasDoPeriodo(periodo.inicio, periodo.fim)}{" "}
               {diasDoPeriodo(periodo.inicio, periodo.fim) === 1 ? "dia" : "dias"}
             </strong>{" "}
             de férias, com retorno em{" "}
-            <strong className="text-white">{dataBr(diaDeRetorno(periodo.fim))}</strong>.
+            <strong className="text-slate-900">{dataBr(diaDeRetorno(periodo.fim))}</strong>.
           </p>
         )}
+        <p className="mt-1 text-sm text-slate-900/80">{REGRA_EPOCA_DAS_FERIAS}</p>
       </div>
       <div className="ml-auto flex gap-2">
         {selecao.inicio && (
           <button
             type="button"
             onClick={aoLimpar}
-            className="rounded-lg px-3 py-2 text-sm text-white/80 transition hover:text-white"
+            className="rounded-lg px-3 py-2 text-sm text-slate-900/80 transition hover:text-slate-900"
           >
             Limpar
           </button>
@@ -72,7 +73,7 @@ export function ResumoSelecao({ selecao, aoSolicitar, aoLimpar }: PropsResumo) {
           type="button"
           disabled={!periodo}
           onClick={aoSolicitar}
-          className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-900 shadow transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-brand shadow transition hover:brightness-125 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CalendarCheck className="size-4" aria-hidden />
           Solicitar férias

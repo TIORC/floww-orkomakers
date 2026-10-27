@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Loader2, Mail, PauseCircle, UserMinus, Pencil, X } from "lucide-react";
+import { CheckCircle2, Loader2, Mail, PauseCircle, UserCheck, UserMinus, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { enviarPrimeiroAcesso } from "@/lib/emails.functions";
@@ -13,6 +13,7 @@ import {
   transferirOuvidor,
   desligarColaborador,
   desativarColaborador,
+  reativarColaborador,
   LIMITE_MOTIVO_OUTROS,
   MOTIVOS_DESATIVACAO,
   MOTIVOS_DESLIGAMENTO,
@@ -28,7 +29,7 @@ import { SeletorPapeis } from "@/components/painel/seletor-papeis";
 import { podeAlterarPapeis, podeTransferirOuvidor, useUsuarioLogado } from "@/hooks/use-usuario-logado";
 import { getIniciais } from "@/lib/iniciais";
 import { listarSetores } from "@/lib/cargos";
-import { listarPessoasParaGestor } from "@/lib/organograma-dados";
+import { listarGestoresCadastrados } from "@/lib/organograma-dados";
 import { cn } from "@/lib/utils";
 
 export type IdentificadorColaborador = { id: string } | { email: string };
@@ -44,6 +45,9 @@ const CAMPO =
   "h-10 w-full rounded-lg border border-panel-active bg-background px-3 text-sm text-white outline-none placeholder:text-white/50 focus-visible:ring-2 focus-visible:ring-brand";
 const ROTULO = "grid gap-1.5 text-sm font-semibold text-white";
 
+// Sub-células disponíveis para o campo Líder de Sub-Célula.
+const SUBCELULAS = ["Célula de Comércio", "Célula de Serviço"] as const;
+
 // Campos somente leitura, na ordem em que aparecem na tela.
 const CAMPOS_LEITURA: { coluna: string; rotulo: string }[] = [
   { coluna: "nome_completo", rotulo: "Nome completo" },
@@ -55,6 +59,7 @@ const CAMPOS_LEITURA: { coluna: string; rotulo: string }[] = [
   { coluna: "departamento", rotulo: "Departamento" },
   { coluna: "unidade", rotulo: "Unidade" },
   { coluna: "papel", rotulo: "Papel" },
+  { coluna: "sublider_area", rotulo: "Líder de Sub-Célula" },
   { coluna: "grupos", rotulo: "Grupos" },
   { coluna: "gestor_direto", rotulo: "Gestor direto" },
   { coluna: "gestor_direto_email", rotulo: "E-mail do gestor" },
@@ -84,12 +89,18 @@ function formatarDataHora(valor: string) {
   return data.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
-// Data de hoje no formato da planilha (DD/MM/AAAA).
-function hojeFormatado() {
+// Data de hoje no formato do campo date (AAAA-MM-DD), no horário local.
+function hojeIso() {
   const agora = new Date();
-  const dia = String(agora.getDate()).padStart(2, "0");
   const mes = String(agora.getMonth() + 1).padStart(2, "0");
-  return `${dia}/${mes}/${agora.getFullYear()}`;
+  const dia = String(agora.getDate()).padStart(2, "0");
+  return `${agora.getFullYear()}-${mes}-${dia}`;
+}
+
+// Converte AAAA-MM-DD do campo date para DD/MM/AAAA, o formato gravado na planilha.
+function dataIsoParaPlanilha(iso: string) {
+  const [ano, mes, dia] = iso.split("-");
+  return `${dia}/${mes}/${ano}`;
 }
 
 function formularioInicial(registro: RegistroColaborador): CamposEditaveis {
@@ -105,6 +116,7 @@ function formularioInicial(registro: RegistroColaborador): CamposEditaveis {
     situacao: registro["situacao"] ?? "",
     gestor_direto: registro["gestor_direto"] ?? "",
     gestor_direto_email: registro["gestor_direto_email"] ?? "",
+    sublider_area: registro["sublider_area"] ?? "",
   };
 }
 
@@ -141,6 +153,8 @@ export function DetalhesColaboradorDialog({
   const [tipoDesligamento, setTipoDesligamento] = useState<TipoDesligamento | "">("");
   const [motivoDesligamento, setMotivoDesligamento] = useState<MotivoDesligamento | "">("");
   const [motivoOutros, setMotivoOutros] = useState("");
+  const [dataDesligamento, setDataDesligamento] = useState("");
+  const [observacaoDesligamento, setObservacaoDesligamento] = useState("");
 
   const chave = identificador
     ? "id" in identificador
@@ -162,7 +176,7 @@ export function DetalhesColaboradorDialog({
   const { data: usuarioLogado } = useUsuarioLogado();
   const { data: gestores = [] } = useQuery({
     queryKey: ["pessoas-gestor"],
-    queryFn: listarPessoasParaGestor,
+    queryFn: listarGestoresCadastrados,
     enabled: modo === "editar",
   });
 
@@ -176,11 +190,18 @@ export function DetalhesColaboradorDialog({
 
   if (!identificador) return null;
 
+  function abrirDesligamento() {
+    setDataDesligamento(hojeIso());
+    setConfirmandoDesligamento(true);
+  }
+
   function limparDesligamento() {
     setConfirmandoDesligamento(false);
     setTipoDesligamento("");
     setMotivoDesligamento("");
     setMotivoOutros("");
+    setDataDesligamento("");
+    setObservacaoDesligamento("");
   }
 
   function limparDesativacao() {
@@ -196,6 +217,7 @@ export function DetalhesColaboradorDialog({
       tipoDesligamento ||
       motivoDesligamento ||
       motivoOutros.trim() ||
+      observacaoDesligamento.trim() ||
       motivoDesativacao ||
       motivoDesativacaoOutros.trim() ||
       desativacaoAte,
@@ -291,20 +313,22 @@ export function DetalhesColaboradorDialog({
   }
 
   const desligamentoValido = Boolean(
+    dataDesligamento &&
     tipoDesligamento &&
     motivoDesligamento &&
     (motivoDesligamento !== "Outros" || motivoOutros.trim()),
   );
 
   async function confirmarDesligamento() {
-    if (!registro || !tipoDesligamento || !motivoDesligamento) return;
+    if (!registro || !desligamentoValido) return;
     setSalvando(true);
     try {
       await desligarColaborador(registro["id"] as string, {
-        dataDesligamento: hojeFormatado(),
-        tipo: tipoDesligamento,
-        motivo: motivoDesligamento,
+        dataDesligamento: dataIsoParaPlanilha(dataDesligamento),
+        tipo: tipoDesligamento as TipoDesligamento,
+        motivo: motivoDesligamento as MotivoDesligamento,
         motivoOutros,
+        observacao: observacaoDesligamento,
       });
       await atualizarListas();
       toast.success(`${registro["nome"]} foi desligado(a).`);
@@ -337,6 +361,22 @@ export function DetalhesColaboradorDialog({
       fechar();
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível desativar.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  // Recadastra um colaborador desligado: volta para Ativo e limpa os dados do desligamento.
+  async function retornarColaborador() {
+    if (!registro) return;
+    setSalvando(true);
+    try {
+      await reativarColaborador(registro["id"] as string);
+      await atualizarListas();
+      toast.success(`${registro["nome"]} voltou a ser colaborador(a).`);
+      fechar();
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível retornar o colaborador.");
     } finally {
       setSalvando(false);
     }
@@ -590,6 +630,21 @@ export function DetalhesColaboradorDialog({
                       />
                     </label>
                     <label className={ROTULO}>
+                      Líder de Sub-Célula
+                      <select
+                        value={form.sublider_area}
+                        onChange={(evento) => setForm({ ...form, sublider_area: evento.target.value })}
+                        className={CAMPO}
+                      >
+                        <option value="">Não é líder de sub-célula</option>
+                        {SUBCELULAS.map((subcelula) => (
+                          <option key={subcelula} value={subcelula}>
+                            {subcelula}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className={ROTULO}>
                       Gestor direto
                       <select
                         value={form.gestor_direto_email}
@@ -692,64 +747,6 @@ export function DetalhesColaboradorDialog({
               </div>
             )}
 
-            {!editando && podeGerenciar && confirmandoDesligamento && (
-              <div className="mt-8 grid gap-5 border-t border-panel-active pt-5 sm:grid-cols-2">
-                <h3 className="text-base font-semibold text-white sm:col-span-2">
-                  Motivo do desligamento
-                </h3>
-                <label className={ROTULO}>
-                  Motivo do desligamento
-                  <select
-                    value={motivoDesligamento}
-                    onChange={(evento) =>
-                      setMotivoDesligamento(evento.target.value as MotivoDesligamento | "")
-                    }
-                    className={CAMPO}
-                  >
-                    <option value="">Selecione o motivo</option>
-                    {MOTIVOS_DESLIGAMENTO.map((motivo) => (
-                      <option key={motivo} value={motivo}>
-                        {motivo}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className={ROTULO}>
-                  Tipo
-                  <select
-                    value={tipoDesligamento}
-                    onChange={(evento) =>
-                      setTipoDesligamento(evento.target.value as TipoDesligamento | "")
-                    }
-                    className={CAMPO}
-                  >
-                    <option value="">Selecione o tipo</option>
-                    {TIPOS_DESLIGAMENTO.map((tipo) => (
-                      <option key={tipo} value={tipo}>
-                        {tipo}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {motivoDesligamento === "Outros" && (
-                  <label className={cn(ROTULO, "sm:col-span-2")}>
-                    Descreva os motivos que levaram ao desligamento
-                    <textarea
-                      value={motivoOutros}
-                      maxLength={LIMITE_MOTIVO_OUTROS}
-                      onChange={(evento) => setMotivoOutros(evento.target.value)}
-                      rows={5}
-                      className={cn(CAMPO, "h-auto py-2")}
-                    />
-                    <span className="text-right text-xs font-normal text-white/70">
-                      {motivoOutros.length.toLocaleString("pt-BR")} /{" "}
-                      {LIMITE_MOTIVO_OUTROS.toLocaleString("pt-BR")} caracteres
-                    </span>
-                  </label>
-                )}
-              </div>
-            )}
-
             {!editando && podeGerenciar && (
               <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-panel-active pt-5">
                 {confirmandoDesativacao ? (
@@ -772,28 +769,6 @@ export function DetalhesColaboradorDialog({
                     >
                       {salvando ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
                       Confirmar desativação
-                    </button>
-                  </>
-                ) : confirmandoDesligamento ? (
-                  <>
-                    <span className="self-center text-sm text-white/80">
-                      Confirmar desligamento em {hojeFormatado()}?
-                    </span>
-                    <button
-                      type="button"
-                      onClick={limparDesligamento}
-                      className="rounded-lg border border-panel-active px-4 py-2 text-sm font-semibold text-white transition hover:bg-panel-active"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={confirmarDesligamento}
-                      disabled={salvando || !desligamentoValido}
-                      className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
-                    >
-                      {salvando ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-                      Confirmar desligamento
                     </button>
                   </>
                 ) : (
@@ -854,10 +829,21 @@ export function DetalhesColaboradorDialog({
                         Desativar
                       </button>
                     )}
+                    {desligado && (
+                      <button
+                        type="button"
+                        onClick={retornarColaborador}
+                        disabled={salvando}
+                        className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-green-500 disabled:opacity-60"
+                      >
+                        {salvando ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <UserCheck className="size-4" aria-hidden />}
+                        Retornar Colaborador
+                      </button>
+                    )}
                     {!desligado && (
                       <button
                         type="button"
-                        onClick={() => setConfirmandoDesligamento(true)}
+                        onClick={abrirDesligamento}
                         className="inline-flex items-center gap-2 rounded-lg border border-destructive px-4 py-2 text-sm font-semibold text-destructive transition hover:bg-destructive/10"
                       >
                         <UserMinus className="size-4" aria-hidden />
@@ -879,6 +865,115 @@ export function DetalhesColaboradorDialog({
           </>
         )}
       </div>
+
+      {!editando && podeGerenciar && confirmandoDesligamento && (
+        <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="desligamento-titulo"
+            className="relative max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-panel-active bg-panel p-6 shadow-2xl sm:p-8"
+          >
+            <h3 id="desligamento-titulo" className="font-display text-lg font-semibold text-white">
+              Desligar {registro?.["nome"]}
+            </h3>
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              <label className={ROTULO}>
+                Motivo do desligamento
+                <select
+                  value={motivoDesligamento}
+                  onChange={(evento) =>
+                    setMotivoDesligamento(evento.target.value as MotivoDesligamento | "")
+                  }
+                  className={CAMPO}
+                >
+                  <option value="">Selecione o motivo</option>
+                  {MOTIVOS_DESLIGAMENTO.map((motivo) => (
+                    <option key={motivo} value={motivo}>
+                      {motivo}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={ROTULO}>
+                Tipo
+                <select
+                  value={tipoDesligamento}
+                  onChange={(evento) =>
+                    setTipoDesligamento(evento.target.value as TipoDesligamento | "")
+                  }
+                  className={CAMPO}
+                >
+                  <option value="">Selecione o tipo</option>
+                  {TIPOS_DESLIGAMENTO.map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {tipo}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={ROTULO}>
+                Data do desligamento
+                <input
+                  type="date"
+                  value={dataDesligamento}
+                  onChange={(evento) => setDataDesligamento(evento.target.value)}
+                  className={CAMPO}
+                  required
+                />
+              </label>
+              {motivoDesligamento === "Outros" && (
+                <label className={cn(ROTULO, "sm:col-span-2")}>
+                  Descreva os motivos que levaram ao desligamento
+                  <textarea
+                    value={motivoOutros}
+                    maxLength={LIMITE_MOTIVO_OUTROS}
+                    onChange={(evento) => setMotivoOutros(evento.target.value)}
+                    rows={4}
+                    className={cn(CAMPO, "h-auto py-2")}
+                  />
+                  <span className="text-right text-xs font-normal text-white/70">
+                    {motivoOutros.length.toLocaleString("pt-BR")} /{" "}
+                    {LIMITE_MOTIVO_OUTROS.toLocaleString("pt-BR")} caracteres
+                  </span>
+                </label>
+              )}
+              <label className={cn(ROTULO, "sm:col-span-2")}>
+                Observações do RH (opcional)
+                <textarea
+                  value={observacaoDesligamento}
+                  maxLength={LIMITE_MOTIVO_OUTROS}
+                  onChange={(evento) => setObservacaoDesligamento(evento.target.value)}
+                  rows={4}
+                  className={cn(CAMPO, "h-auto py-2")}
+                />
+                <span className="text-right text-xs font-normal text-white/70">
+                  {observacaoDesligamento.length.toLocaleString("pt-BR")} /{" "}
+                  {LIMITE_MOTIVO_OUTROS.toLocaleString("pt-BR")} caracteres
+                </span>
+              </label>
+            </div>
+            <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-panel-active pt-5">
+              <button
+                type="button"
+                onClick={limparDesligamento}
+                className="rounded-lg border border-panel-active px-4 py-2 text-sm font-semibold text-white transition hover:bg-panel-active"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarDesligamento}
+                disabled={salvando || !desligamentoValido}
+                className="inline-flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+              >
+                {salvando ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+                Confirmar desligamento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmandoSaida && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">

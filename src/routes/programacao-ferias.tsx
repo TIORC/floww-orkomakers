@@ -1,32 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
+import { toast } from "sonner";
 
 import { CartaoColaborador } from "@/components/ferias/cartao-colaborador";
 import { CalendarioAnual, type SelecaoPeriodo } from "@/components/ferias/calendario-anual";
-import { CartaoSolicitacao, ResumoSelecao } from "@/components/ferias/solicitacao-ferias";
+import { CartaoProgramacao } from "@/components/ferias/cartao-programacao";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
 import { PerfilFlutuante } from "@/components/perfil-flutuante";
+import { listarEquipeDireta } from "@/lib/colaboradores-diretorio";
 import {
-  listarColaboradoresDoSetor,
-  listarOpcoesDiretorio,
-  separarLideres,
-} from "@/lib/colaboradores-diretorio";
+  listarEmailsComFeriasProgramadas,
+  listarFeriasProgramadas,
+  removerFeriasProgramadas,
+  salvarFeriasProgramadas,
+} from "@/lib/ferias-programadas";
 import {
-  podeSolicitarFeriasDemo,
+  podeProgramarFerias,
   podeVerProgramacaoFerias,
   podeVerTodosOsSetores,
   useUsuarioLogado,
 } from "@/hooks/use-usuario-logado";
-import { buscarColaborador } from "@/lib/colaborador-detalhe";
-import {
-  carregarSolicitacao,
-  criarSolicitacao,
-  salvarSolicitacao,
-  type SolicitacaoFerias,
-} from "@/lib/ferias-solicitacao";
+import { buscarPessoasOrganograma } from "@/lib/organograma-dados";
 import { motivoDeBloqueioDoInicio } from "@/lib/ferias-regras";
-import { agruparSetores, chaveDoSetor } from "@/lib/setores-agrupados";
+import { ordenarPeriodo } from "@/lib/calendario";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/programacao-ferias")({
   head: () => ({
@@ -38,69 +36,171 @@ export const Route = createFileRoute("/programacao-ferias")({
 const CAMPO =
   "h-10 min-w-[16rem] rounded-lg border border-panel-active bg-background px-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-brand";
 
+type PessoaDaEquipe = { email: string; nome: string };
+
+// Cartão de um membro da equipe. Quem programa pode clicar para escolher a pessoa; os demais só veem.
+function CartaoDaEquipe({
+  pessoa,
+  podeEscolher,
+  selecionado,
+  aoEscolher,
+  children,
+}: {
+  pessoa: PessoaDaEquipe;
+  podeEscolher: boolean;
+  selecionado: boolean;
+  aoEscolher: (pessoa: PessoaDaEquipe) => void;
+  children: ReactNode;
+}) {
+  function aoTeclar(evento: KeyboardEvent<HTMLDivElement>) {
+    if (evento.key === "Enter" || evento.key === " ") {
+      evento.preventDefault();
+      aoEscolher(pessoa);
+    }
+  }
+
+  return (
+    <div
+      role={podeEscolher ? "button" : undefined}
+      tabIndex={podeEscolher ? 0 : undefined}
+      aria-pressed={podeEscolher ? selecionado : undefined}
+      onClick={podeEscolher ? () => aoEscolher(pessoa) : undefined}
+      onKeyDown={podeEscolher ? aoTeclar : undefined}
+      className={cn(
+        "rounded-2xl transition",
+        podeEscolher &&
+          "cursor-pointer hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+        selecionado && "ring-2 ring-brand",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 function ProgramacaoFeriasPage() {
   const { data: usuario, isPending: carregandoUsuario } = useUsuarioLogado();
+  const queryClient = useQueryClient();
   const acesso = podeVerProgramacaoFerias(usuario);
   const veTodosOsSetores = podeVerTodosOsSetores(usuario);
-  const [setorEscolhido, setSetorEscolhido] = useState<string | null>(null);
+  const podeProgramar = podeProgramarFerias(usuario);
+  const [gestorEscolhido, setGestorEscolhido] = useState<string | null>(null);
   const [ano, setAno] = useState(() => new Date().getFullYear());
+  const [colaboradorSelecionado, setColaboradorSelecionado] = useState<PessoaDaEquipe | null>(null);
+  const [selecao, setSelecao] = useState<SelecaoPeriodo>({ inicio: null, fim: null });
+  const [salvando, setSalvando] = useState(false);
+  const [remocaoPendente, setRemocaoPendente] = useState<string | null>(null);
 
-  // Os setores vêm do cadastro, com as grafias parecidas agrupadas ("TI", "Departamento TI/Desenvolvimento"...).
-  const opcoes = useQuery({
-    queryKey: ["opcoes-diretorio"],
-    queryFn: listarOpcoesDiretorio,
+  // A equipe segue a hierarquia do organograma (gestor direto), não o setor.
+  // Quem vê todos os setores escolhe um gestor; os outros veem sempre a própria equipe.
+  const emailDoUsuario = usuario?.email ?? "";
+  // Por padrão, abre na linhagem do gestor direto de quem está logado.
+  const gestorDoUsuario = usuario?.gestorDiretoEmail || emailDoUsuario;
+  const emailGestor = veTodosOsSetores ? (gestorEscolhido ?? gestorDoUsuario) : emailDoUsuario;
+  const { data: pessoasOrganograma = [] } = useQuery({
+    queryKey: ["organograma"],
+    queryFn: buscarPessoasOrganograma,
     enabled: acesso,
   });
-  const setores = useMemo(() => agruparSetores(opcoes.data?.departamentos ?? []), [opcoes.data]);
-
-  // O padrão é o setor de quem está logado; o seletor permite olhar os outros setores.
-  // Gestores e Colaboradores ficam sempre no próprio setor, mesmo que o seletor fosse forçado.
-  const chaveDoMeuSetor = chaveDoSetor(usuario?.setor ?? "");
-  const chaveEscolhida = veTodosOsSetores ? (setorEscolhido ?? chaveDoMeuSetor) : chaveDoMeuSetor;
-  const grupo = setores.find((s) => s.chave === chaveEscolhida);
-  // Enquanto a lista de setores carrega, busca ao menos pela grafia do próprio usuário.
-  const variantes =
-    grupo?.variantes ??
-    (chaveEscolhida === chaveDoMeuSetor && usuario?.setor ? [usuario.setor] : []);
-  const nomeDoSetor = grupo?.rotulo ?? usuario?.setor ?? "";
-
-  const colaboradores = useQuery({
-    queryKey: ["colaboradores-do-setor", variantes.join("|")],
-    queryFn: () => listarColaboradoresDoSetor(variantes),
-    enabled: acesso && variantes.length > 0,
+  // Gestores são as pessoas que têm alguém respondendo a elas.
+  const gestores = useMemo(() => {
+    const comEquipe = new Set(
+      pessoasOrganograma.map((pessoa) => pessoa.gestorEmail.trim().toLowerCase()).filter(Boolean),
+    );
+    return pessoasOrganograma
+      .filter((pessoa) => comEquipe.has(pessoa.email.trim().toLowerCase()))
+      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }, [pessoasOrganograma]);
+  const gestorAlvo = pessoasOrganograma.find(
+    (pessoa) => pessoa.email.trim().toLowerCase() === emailGestor.trim().toLowerCase(),
+  );
+  const equipeDireta = useQuery({
+    queryKey: ["equipe-direta", emailGestor],
+    queryFn: () => listarEquipeDireta(emailGestor),
+    enabled: acesso && Boolean(emailGestor),
   });
-  const lista = useMemo(() => colaboradores.data ?? [], [colaboradores.data]);
-  const { lideres, equipe } = useMemo(() => separarLideres(lista), [lista]);
+  const equipe = useMemo(() => equipeDireta.data ?? [], [equipeDireta.data]);
+  // Líderes de sub-célula ficam logo abaixo do líder; o restante da equipe vem depois.
+  const subLideres = useMemo(() => equipe.filter((pessoa) => pessoa.subliderArea.trim()), [equipe]);
+  const demais = useMemo(() => equipe.filter((pessoa) => !pessoa.subliderArea.trim()), [equipe]);
+  const lideres = gestorAlvo
+    ? [
+        {
+          id: gestorAlvo.id,
+          nome: gestorAlvo.nome,
+          cargoVisivel: gestorAlvo.cargo,
+          fotoUrl: gestorAlvo.fotoUrl ?? "",
+          dataAdmissao: gestorAlvo.dataAdmissao,
+        },
+      ]
+    : [];
 
-  // Solicitação de férias (demonstração, só para o Desenvolvedor do Sistema): clica no primeiro e no último dia.
-  const podeSolicitar = podeSolicitarFeriasDemo(usuario);
-  const [selecao, setSelecao] = useState<SelecaoPeriodo>({ inicio: null, fim: null });
-  const [solicitacao, setSolicitacao] = useState<SolicitacaoFerias | null>(null);
-  const email = usuario?.email ?? "";
-
-  useEffect(() => {
-    if (podeSolicitar && email) setSolicitacao(carregarSolicitacao(email));
-  }, [podeSolicitar, email]);
-
-  // Quem aprova é o gestor direto de quem pede; se não houver, o líder do próprio setor.
-  const meuGrupo = setores.find((s) => s.chave === chaveDoMeuSetor);
-  const variantesDoMeuSetor = meuGrupo?.variantes ?? (usuario?.setor ? [usuario.setor] : []);
-  const meuSetor = useQuery({
-    queryKey: ["colaboradores-do-setor", variantesDoMeuSetor.join("|")],
-    queryFn: () => listarColaboradoresDoSetor(variantesDoMeuSetor),
-    enabled: podeSolicitar && variantesDoMeuSetor.length > 0,
+  // Quem programa vê o calendário da pessoa escolhida; os demais veem só o próprio calendário.
+  const emailDoCalendario = podeProgramar ? (colaboradorSelecionado?.email ?? "") : emailDoUsuario;
+  const feriasProgramadas = useQuery({
+    queryKey: ["ferias-programadas", emailDoCalendario],
+    queryFn: () => listarFeriasProgramadas(emailDoCalendario),
+    enabled: acesso && Boolean(emailDoCalendario),
   });
-  const gestorDireto = useQuery({
-    queryKey: ["gestor-direto", usuario?.gestorDiretoEmail],
-    queryFn: () => buscarColaborador({ email: usuario?.gestorDiretoEmail ?? "" }),
-    enabled: podeSolicitar && !!usuario?.gestorDiretoEmail,
+  const programados = useMemo(() => feriasProgramadas.data ?? [], [feriasProgramadas.data]);
+  // Quem já tem férias programadas ganha o selo "Programado!" no card (quando não está selecionado).
+  const emailsDaEquipe = useMemo(
+    () => [...equipe.map((pessoa) => pessoa.email), ...(gestorAlvo ? [gestorAlvo.email] : [])],
+    [equipe, gestorAlvo],
+  );
+  const comFeriasProgramadas = useQuery({
+    queryKey: ["ferias-programadas-equipe", emailsDaEquipe.join("|")],
+    queryFn: () => listarEmailsComFeriasProgramadas(emailsDaEquipe),
+    enabled: acesso && emailsDaEquipe.length > 0,
   });
-  const liderNome =
-    gestorDireto.data?.["nome"] ||
-    separarLideres(meuSetor.data ?? []).lideres.find(
-      (l) => l.email.toLowerCase() !== email.toLowerCase(),
-    )?.nome ||
-    "seu líder";
+  const emailsProgramados = useMemo(
+    () => new Set((comFeriasProgramadas.data ?? []).map((email) => email.toLowerCase())),
+    [comFeriasProgramadas.data],
+  );
+  const estaProgramado = (email: string) =>
+    emailsProgramados.has(email.toLowerCase()) && colaboradorSelecionado?.email !== email;
+
+  // Datas em AAAA-MM-DD viram DD/MM/AAAA para aparecer no card.
+  const periodosFormatados = useMemo(
+    () =>
+      programados.map((p) => ({
+        id: p.id,
+        texto: `${p.inicio.split("-").reverse().join("/")} a ${p.fim.split("-").reverse().join("/")}`,
+      })),
+    [programados],
+  );
+
+  // Pede confirmação no próprio app antes de remover a programação escolhida.
+  function removerFerias(id: string) {
+    if (!podeProgramar || !colaboradorSelecionado) return;
+    setRemocaoPendente(id);
+  }
+
+  async function confirmarRemocao() {
+    const id = remocaoPendente;
+    setRemocaoPendente(null);
+    if (!id || !colaboradorSelecionado) return;
+    try {
+      await removerFeriasProgramadas(id);
+      await queryClient.invalidateQueries({ queryKey: ["ferias-programadas", colaboradorSelecionado.email] });
+      await queryClient.invalidateQueries({ queryKey: ["ferias-programadas-equipe"] });
+      toast.success("Programação removida.");
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível remover a programação.");
+    }
+  }
+
+  function escolherColaborador(pessoa: PessoaDaEquipe) {
+    if (!podeProgramar) return;
+    setColaboradorSelecionado(pessoa);
+    setSelecao({ inicio: null, fim: null });
+  }
+
+  function trocarGestor(email: string) {
+    setGestorEscolhido(email);
+    setColaboradorSelecionado(null);
+    setSelecao({ inicio: null, fim: null });
+  }
 
   // Primeiro clique escolhe o início, o segundo escolhe o fim; um terceiro recomeça a escolha.
   // O início não pode ser nos 2 dias antes de feriado ou do descanso semanal; o calendário já bloqueia esses dias.
@@ -111,17 +211,33 @@ function ProgramacaoFeriasPage() {
     });
   }
 
-  function solicitarFerias() {
-    if (!selecao.inicio || !selecao.fim) return;
-    const nova = criarSolicitacao(selecao.inicio, selecao.fim, liderNome);
-    setSolicitacao(nova);
-    salvarSolicitacao(email, nova);
-    setSelecao({ inicio: null, fim: null });
-  }
-
-  function cancelarSolicitacao() {
-    setSolicitacao(null);
-    salvarSolicitacao(email, null);
+  // Programar só registra o período. Não efetiva as férias.
+  async function programarFerias() {
+    if (!podeProgramar || !colaboradorSelecionado || !selecao.inicio || !selecao.fim) return;
+    const periodo = ordenarPeriodo(selecao.inicio, selecao.fim);
+    const sobrepoe = programados.some((p) => periodo.inicio <= p.fim && periodo.fim >= p.inicio);
+    if (sobrepoe) {
+      toast.error("Já existem férias programadas em parte desse período.");
+      return;
+    }
+    setSalvando(true);
+    try {
+      await salvarFeriasProgramadas({
+        colaboradorEmail: colaboradorSelecionado.email,
+        colaboradorNome: colaboradorSelecionado.nome,
+        inicio: periodo.inicio,
+        fim: periodo.fim,
+        programadoPorEmail: emailDoUsuario,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["ferias-programadas", colaboradorSelecionado.email] });
+      await queryClient.invalidateQueries({ queryKey: ["ferias-programadas-equipe"] });
+      toast.success(`Férias programadas para ${colaboradorSelecionado.nome}.`);
+      setSelecao({ inicio: null, fim: null });
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível programar as férias.");
+    } finally {
+      setSalvando(false);
+    }
   }
 
   // Visitantes não têm acesso a esta página.
@@ -138,6 +254,8 @@ function ProgramacaoFeriasPage() {
     );
   }
 
+  const escolhendoColaborador = podeProgramar && colaboradorSelecionado !== null;
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
@@ -148,55 +266,65 @@ function ProgramacaoFeriasPage() {
               Programação de Férias
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-white/80">
-              Veja quem faz parte do setor e o calendário do ano para planejar as férias.
+              {podeProgramar
+                ? "Escolha um colaborador da equipe e programe o período de férias dele. Programar não efetiva as férias."
+                : "Veja o calendário das suas férias programadas pelo seu gestor."}
             </p>
           </div>
           {veTodosOsSetores ? (
             <div className="grid gap-2">
-              <label htmlFor="filtro-setor" className="text-sm font-semibold text-white">
-                Setor
+              <label htmlFor="filtro-gestor" className="text-sm font-semibold text-white">
+                Gestor
               </label>
-              <select
-                id="filtro-setor"
-                value={chaveEscolhida}
-                onChange={(evento) => setSetorEscolhido(evento.target.value)}
-                className={CAMPO}
+              {/* A foto do gestor escolhido vira o fundo do seletor; o escurecimento deixa o nome legível. */}
+              <div
+                className="relative overflow-hidden rounded-lg border border-brand bg-cover bg-center"
+                style={gestorAlvo?.fotoUrl ? { backgroundImage: `url(${gestorAlvo.fotoUrl})` } : undefined}
               >
-                {setores.length === 0 && chaveEscolhida !== "" && (
-                  <option value={chaveEscolhida}>{nomeDoSetor}</option>
-                )}
-                {setores.map((setor) => (
-                  <option key={setor.chave} value={setor.chave}>
-                    {setor.rotulo}
-                  </option>
-                ))}
-              </select>
+                <div className="absolute inset-0 bg-slate-900/70" aria-hidden />
+                <select
+                  id="filtro-gestor"
+                  value={emailGestor}
+                  onChange={(evento) => trocarGestor(evento.target.value)}
+                  className="relative h-14 min-w-[16rem] w-full bg-transparent px-3 text-sm font-semibold text-white outline-none focus-visible:ring-2 focus-visible:ring-brand [text-shadow:0_1px_3px_rgb(0_0_0/0.8)]"
+                >
+                  {emailGestor &&
+                    !gestores.some((gestor) => gestor.email.toLowerCase() === emailGestor.toLowerCase()) && (
+                      <option value={emailGestor} className="bg-panel text-white">
+                        {gestorAlvo?.nome || emailGestor}
+                      </option>
+                    )}
+                  {gestores.map((gestor) => (
+                    <option key={gestor.email} value={gestor.email} className="bg-panel text-white">
+                      {gestor.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           ) : (
             <p className="text-sm text-white/80">
-              Setor: <span className="font-semibold text-white">{nomeDoSetor || "—"}</span>
+              Equipe de: <span className="font-semibold text-white">{gestorAlvo?.nome || "—"}</span>
             </p>
           )}
         </header>
 
-        <section aria-label="Colaboradores do setor" className="mt-8">
+        <section aria-label="Equipe" className="mt-8">
           <h2 className="mb-4 flex items-baseline gap-2 font-display text-xl font-semibold text-white">
-            Colaboradores
-            {colaboradores.isSuccess && (
+            Equipe
+            {equipeDireta.isSuccess && (
               <span className="text-sm font-normal text-white/60">
-                {lista.length} {lista.length === 1 ? "pessoa" : "pessoas"}
+                {equipe.length} {equipe.length === 1 ? "pessoa" : "pessoas"}
               </span>
             )}
           </h2>
 
-          {colaboradores.isError ? (
-            <p className="text-sm text-red-400">Não consegui carregar os colaboradores do setor.</p>
-          ) : chaveEscolhida === "" ? (
-            <p className="text-sm text-white/70">Escolha um setor para ver os colaboradores.</p>
-          ) : colaboradores.isPending ? (
+          {equipeDireta.isError ? (
+            <p className="text-sm text-red-400">Não consegui carregar a equipe.</p>
+          ) : equipeDireta.isPending ? (
             <p className="text-sm text-white/70">Carregando…</p>
-          ) : lista.length === 0 ? (
-            <p className="text-sm text-white/70">Nenhum colaborador ativo neste setor.</p>
+          ) : equipe.length === 0 ? (
+            <p className="text-sm text-white/70">Nenhum colaborador ativo responde a este gestor.</p>
           ) : (
             <div className="grid gap-6">
               {lideres.length > 0 && (
@@ -208,23 +336,69 @@ function ProgramacaoFeriasPage() {
                         nome={lider.nome}
                         cargo={lider.cargoVisivel}
                         fotoUrl={lider.fotoUrl}
+                        dataAdmissao={lider.dataAdmissao}
+                        programado={gestorAlvo ? estaProgramado(gestorAlvo.email) : false}
                       />
                     </li>
                   ))}
                 </ul>
               )}
-              {equipe.length > 0 && (
+              {subLideres.length > 0 && (
+                <ul
+                  aria-label="Líderes de Sub-Célula"
+                  className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+                >
+                  {subLideres.map((colaborador) => (
+                    <li key={colaborador.id}>
+                      <CartaoDaEquipe
+                        pessoa={colaborador}
+                        podeEscolher={podeProgramar}
+                        selecionado={colaboradorSelecionado?.email === colaborador.email}
+                        aoEscolher={escolherColaborador}
+                      >
+                        <CartaoColaborador
+                          nome={colaborador.nome}
+                          cargo={colaborador.cargoVisivel}
+                          fotoUrl={colaborador.fotoUrl}
+                          dataAdmissao={colaborador.dataAdmissao}
+                          subLider={colaborador.subliderArea}
+                          programado={estaProgramado(colaborador.email)}
+                          feriasProgramadas={
+                            colaboradorSelecionado?.email === colaborador.email ? periodosFormatados : []
+                          }
+                          aoRemoverFerias={podeProgramar ? removerFerias : undefined}
+                        />
+                      </CartaoDaEquipe>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {demais.length > 0 && (
                 <ul
                   aria-label="Equipe"
                   className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
                 >
-                  {equipe.map((colaborador) => (
+                  {demais.map((colaborador) => (
                     <li key={colaborador.id}>
-                      <CartaoColaborador
-                        nome={colaborador.nome}
-                        cargo={colaborador.cargoVisivel}
-                        fotoUrl={colaborador.fotoUrl}
-                      />
+                      <CartaoDaEquipe
+                        pessoa={colaborador}
+                        podeEscolher={podeProgramar}
+                        selecionado={colaboradorSelecionado?.email === colaborador.email}
+                        aoEscolher={escolherColaborador}
+                      >
+                        <CartaoColaborador
+                          nome={colaborador.nome}
+                          cargo={colaborador.cargoVisivel}
+                          fotoUrl={colaborador.fotoUrl}
+                          dataAdmissao={colaborador.dataAdmissao}
+                          subLider={colaborador.subliderArea}
+                          programado={estaProgramado(colaborador.email)}
+                          feriasProgramadas={
+                            colaboradorSelecionado?.email === colaborador.email ? periodosFormatados : []
+                          }
+                          aoRemoverFerias={podeProgramar ? removerFerias : undefined}
+                        />
+                      </CartaoDaEquipe>
                     </li>
                   ))}
                 </ul>
@@ -234,26 +408,66 @@ function ProgramacaoFeriasPage() {
         </section>
 
         <section aria-label="Calendário do ano" className="mt-10">
-          {podeSolicitar && solicitacao && (
-            <CartaoSolicitacao solicitacao={solicitacao} aoCancelar={cancelarSolicitacao} />
-          )}
-          {podeSolicitar && !solicitacao && (
-            <ResumoSelecao
+          {escolhendoColaborador && (
+            <CartaoProgramacao
+              nome={colaboradorSelecionado.nome}
               selecao={selecao}
-              aoSolicitar={solicitarFerias}
+              salvando={salvando}
+              aoProgramar={programarFerias}
               aoLimpar={() => setSelecao({ inicio: null, fim: null })}
             />
+          )}
+          {podeProgramar && !colaboradorSelecionado && (
+            <p className="mb-4 text-sm text-white/80">
+              Selecione um colaborador da equipe para programar as férias dele.
+            </p>
           )}
           <CalendarioAnual
             ano={ano}
             aoMudarAno={setAno}
-            {...(podeSolicitar && !solicitacao
-              ? { selecao, aoEscolherDia: escolherDia, motivoDeBloqueioDoInicio }
-              : {})}
+            selecao={selecao}
+            programados={programados}
+            {...(escolhendoColaborador ? { aoEscolherDia: escolherDia, motivoDeBloqueioDoInicio } : {})}
           />
         </section>
       </main>
       <PerfilFlutuante />
+
+      {remocaoPendente && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="remocao-ferias-titulo"
+            aria-describedby="remocao-ferias-texto"
+            className="w-full max-w-md rounded-2xl border border-brand bg-panel p-6 shadow-2xl shadow-brand/10"
+          >
+            <h3 id="remocao-ferias-titulo" className="font-display text-lg font-semibold text-brand">
+              Remover programação de férias?
+            </h3>
+            <p id="remocao-ferias-texto" className="mt-3 text-sm text-white/85">
+              A programação de férias de {colaboradorSelecionado?.nome} será removida. Essa ação não
+              pode ser desfeita.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setRemocaoPendente(null)}
+                className="rounded-lg border border-panel-active px-4 py-2 text-sm font-semibold text-white transition hover:bg-panel-active"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarRemocao}
+                className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-900 shadow transition hover:brightness-110"
+              >
+                Remover
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

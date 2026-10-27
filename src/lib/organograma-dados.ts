@@ -17,7 +17,7 @@ export async function buscarPessoasOrganograma(): Promise<PessoaOrganograma[]> {
     const { data, error } = await db
       .from("colaboradores_importados")
       .select(
-        "id, nome, email, cargo, cargo_visivel, departamento, gestor_direto_email, papel, foto_url, situacao, desligamento, ultimo_dia_trabalhado",
+        "id, nome, email, cargo, cargo_visivel, departamento, gestor_direto_email, papel, foto_url, situacao, desligamento, ultimo_dia_trabalhado, data_admissao",
       )
       .order("nome", { ascending: true })
       .order("id", { ascending: true })
@@ -43,6 +43,7 @@ export async function buscarPessoasOrganograma(): Promise<PessoaOrganograma[]> {
           gestorEmail: linha["gestor_direto_email"] ?? "",
           papel: linha["papel"] ?? "",
           fotoUrl: linha["foto_url"] || null,
+          dataAdmissao: linha["data_admissao"] ?? "",
         });
       });
 
@@ -75,7 +76,29 @@ export async function listarPessoasParaGestor(): Promise<PessoaGestor[]> {
   return pessoas;
 }
 
-export type GestorDoSetor = { email: string; nome: string; cargo: string; setor: string; fotoUrl: string | null };
+// Quem está cadastrado com o papel Gestor ou Administrador, para escolher o gestor direto na edição.
+export async function listarGestoresCadastrados(): Promise<PessoaGestor[]> {
+  const gestores: PessoaGestor[] = [];
+  for (let inicio = 0; ; inicio += TAMANHO_PAGINA) {
+    const { data, error } = await aplicarSomenteAtivos(
+      db
+        .from("colaboradores_importados")
+        .select("nome, email")
+        .in("nivel_acesso", ["gestor", "administrador"])
+        .order("nome", { ascending: true })
+        .order("id", { ascending: true })
+        .range(inicio, inicio + TAMANHO_PAGINA - 1),
+    );
+    if (error) throw error;
+    (data ?? []).forEach((linha: Record<string, string | null>) => {
+      if (linha["email"]) gestores.push({ nome: linha["nome"] ?? "", email: linha["email"] });
+    });
+    if (!data || data.length < TAMANHO_PAGINA) break;
+  }
+  return gestores;
+}
+
+export type GestorDoSetor ={ email: string; nome: string; cargo: string; setor: string; fotoUrl: string | null };
 
 // Compara nomes de setor ignorando prefixo "Departamento", acentos, maiúsculas e pontuação.
 // Ex.: "Departamento TI/Desenvolvimento" bate com "TI / Desenvolvimento".

@@ -1,19 +1,29 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Building2, CalendarOff, Clock, Shield, User, type LucideIcon } from "lucide-react";
+import { ArrowLeft, CalendarOff, Clock, RotateCcw } from "lucide-react";
 
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
 import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import { FormularioAvisoAusencia } from "@/components/painel/formulario-aviso-ausencia";
+import { FormularioHoraExtra } from "@/components/painel/formulario-hora-extra";
+import { FundoAvisoSvg } from "@/components/painel/fundo-aviso-svg";
+import { FormularioRetrabalho } from "@/components/painel/formulario-retrabalho";
+import { MinhasSolicitacoes } from "@/components/painel/minhas-solicitacoes";
+import { listarAvisosParaAprovar, listarMeusAvisos } from "@/lib/avisos";
+import { useQuery } from "@tanstack/react-query";
+import { AguardandoAprovacao } from "@/components/painel/aguardando-aprovacao";
+import { podeAprovarAvisos, useUsuarioLogado } from "@/hooks/use-usuario-logado";
+import { cn } from "@/lib/utils";
 
 const TITULO = "Horas Extras e Horas Faltas";
 
-// Dentro do Aviso de Horas Extra: quem solicita e quem aprova, cada um em seu card.
-const FLUXO_HORAS_EXTRA: { titulo: string; subtitulo: string; icone: LucideIcon }[] = [
-  { titulo: "Solicitação de Hora Extra", subtitulo: "Colaborador", icone: User },
-  { titulo: "Aprovação – Operacional", subtitulo: "Setores operacionais", icone: Shield },
-  { titulo: "Aprovação – Administrativo", subtitulo: "Setores administrativos", icone: Building2 },
+type Aba = "solicitacao" | "minhas" | "aguardando";
+
+const ABAS: { valor: Aba; rotulo: string; so_aprovadores?: boolean }[] = [
+  { valor: "solicitacao", rotulo: "Solicitação" },
+  { valor: "minhas", rotulo: "Minhas Solicitações" },
+  { valor: "aguardando", rotulo: "Aguardando Aprovação", so_aprovadores: true },
 ];
 
 // Cada aviso vira um card, com o que a pessoa registra e para quem vai o pedido.
@@ -40,6 +50,17 @@ const AVISOS = [
       icone: "bg-slate-900/10 text-slate-900",
     },
   },
+  {
+    id: "retrabalho",
+    titulo: "Aviso de Retrabalho",
+    descricao: "Comunique os retrabalhos realizados para que sejam registrados e autorizados pelo gestor.",
+    icone: RotateCcw,
+    cores: {
+      fundo: "bg-violet-400",
+      texto: "text-slate-900",
+      icone: "bg-slate-900/10 text-slate-900",
+    },
+  },
 ];
 
 export const Route = createFileRoute("/horas-extras-faltas")({
@@ -52,6 +73,21 @@ export const Route = createFileRoute("/horas-extras-faltas")({
 function HorasExtrasFaltasPage() {
   // Card aberto em tela cheia. Quando há um, o outro some.
   const [selecionado, setSelecionado] = useState<string | null>(null);
+  // Alterna entre fazer uma nova solicitação e ver as solicitações já feitas.
+  const [aba, setAba] = useState<Aba>("solicitacao");
+  const { data: usuario } = useUsuarioLogado();
+  const podeAprovar = podeAprovarAvisos(usuario);
+  // Avisos enviados pela pessoa, e avisos pendentes que chegam a ela para aprovar.
+  const meusAvisos = useQuery({
+    queryKey: ["avisos-minhas", usuario?.email ?? ""],
+    queryFn: () => listarMeusAvisos(usuario?.email ?? ""),
+    enabled: Boolean(usuario?.email),
+  });
+  const avisosParaAprovar = useQuery({
+    queryKey: ["avisos-aguardando"],
+    queryFn: listarAvisosParaAprovar,
+    enabled: podeAprovar,
+  });
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -81,6 +117,49 @@ function HorasExtrasFaltasPage() {
           </AnimatePresence>
         </header>
 
+        <div role="group" aria-label="Seção" className="mx-auto mt-6 flex w-fit rounded-full border border-panel-active bg-panel p-1">
+          {ABAS.filter((item) => !item.so_aprovadores || podeAprovar).map((item) => {
+            const ativa = aba === item.valor;
+            return (
+              <button
+                key={item.valor}
+                type="button"
+                aria-pressed={ativa}
+                onClick={() => {
+                  setAba(item.valor);
+                  setSelecionado(null);
+                }}
+                className={cn(
+                  "relative rounded-full px-5 py-2 text-sm font-semibold transition-colors",
+                  ativa ? "text-slate-900" : "text-white hover:text-brand",
+                )}
+              >
+                {ativa && (
+                  <motion.span
+                    layoutId="aba-ativa"
+                    className="absolute inset-0 rounded-full bg-brand shadow-lg shadow-brand/30"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">{item.rotulo}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={aba}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
+            {aba === "minhas" && <MinhasSolicitacoes solicitacoes={meusAvisos.data ?? []} />}
+
+            {aba === "aguardando" && podeAprovar && <AguardandoAprovacao solicitacoes={avisosParaAprovar.data ?? []} />}
+
+        {aba === "solicitacao" && (
         <motion.div layout className="mt-8 grid gap-6 md:grid-cols-2">
           <AnimatePresence initial={false}>
             {AVISOS.filter((aviso) => !selecionado || aviso.id === selecionado).map(
@@ -100,12 +179,14 @@ function HorasExtrasFaltasPage() {
                             if (evento.key === "Enter" || evento.key === " ") setSelecionado(id);
                           }
                     }
+                    whileHover={aberto ? {} : { scale: 1.03 }}
                     initial={{ opacity: 0, scale: 0.96 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.96 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className={`flex flex-col justify-start rounded-2xl p-6 text-left shadow-sm transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${cores.fundo} ${cores.texto} ${aberto ? "md:col-span-2 min-h-[60vh]" : "cursor-pointer hover:shadow-lg"}`}
+                    className={`isolate relative flex flex-col justify-start overflow-hidden rounded-2xl p-6 text-left shadow-sm transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${cores.fundo} ${cores.texto} ${aberto ? "md:col-span-2 min-h-[60vh]" : "cursor-pointer hover:shadow-lg"} ${id === "retrabalho" && !aberto ? "md:col-span-2 md:mx-auto md:w-[calc(50%-0.75rem)]" : ""}`}
                   >
+                    <FundoAvisoSvg id={id} />
                     <div className="flex items-center gap-3">
                       <span className={`flex size-10 items-center justify-center rounded-lg ${cores.icone}`}>
                         <Icone className="size-5" aria-hidden />
@@ -115,28 +196,14 @@ function HorasExtrasFaltasPage() {
                     <p className="mt-4 text-sm font-medium">{descricao}</p>
 
                     {aberto && id === "horas-extra" && (
-                      <div className="mt-8 grid gap-4 md:grid-cols-3">
-                        {FLUXO_HORAS_EXTRA.map((etapa, indice) => {
-                          const IconeEtapa = etapa.icone;
-                          return (
-                            <motion.div
-                              key={etapa.titulo}
-                              initial={{ opacity: 0, y: 12 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.3, delay: 0.1 + indice * 0.08, ease: "easeOut" }}
-                              className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-sm"
-                            >
-                              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-                                <IconeEtapa className="size-5" aria-hidden />
-                              </span>
-                              <div>
-                                <p className="font-semibold">{etapa.titulo}</p>
-                                <p className="mt-0.5 text-xs text-slate-500">{etapa.subtitulo}</p>
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
+                      <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.1, ease: "easeOut" }}
+                        className="cursor-default"
+                      >
+                        <FormularioHoraExtra />
+                      </motion.div>
                     )}
 
                     {aberto && id === "ausencia" && (
@@ -149,12 +216,26 @@ function HorasExtrasFaltasPage() {
                         <FormularioAvisoAusencia />
                       </motion.div>
                     )}
+
+                    {aberto && id === "retrabalho" && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.1, ease: "easeOut" }}
+                        className="cursor-default"
+                      >
+                        <FormularioRetrabalho />
+                      </motion.div>
+                    )}
                   </motion.div>
                 );
               },
             )}
           </AnimatePresence>
         </motion.div>
+        )}
+          </motion.div>
+        </AnimatePresence>
       </main>
       <PerfilFlutuante />
     </div>

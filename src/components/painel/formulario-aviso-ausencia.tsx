@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarRange, Clock, FileText, Mail, Send } from "lucide-react";
 import { toast } from "sonner";
 
+import { criarAviso } from "@/lib/avisos";
 import { listarSetores } from "@/lib/cargos";
 import { useUsuarioLogado } from "@/hooks/use-usuario-logado";
 
@@ -25,6 +26,7 @@ const SECAO = "flex items-center gap-2 text-xs font-bold uppercase tracking-wide
 export function FormularioAvisoAusencia() {
   const { data: usuario } = useUsuarioLogado();
   const { data: setores = [] } = useQuery({ queryKey: ["setores"], queryFn: listarSetores });
+  const queryClient = useQueryClient();
 
   const [setor, setSetor] = useState("");
 
@@ -49,14 +51,35 @@ export function FormularioAvisoAusencia() {
   const [emailLider, setEmailLider] = useState("");
   const [observacoes, setObservacoes] = useState("");
 
-  function enviar(evento: FormEvent<HTMLFormElement>) {
+  async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (!setor || !email || !data || !motivo.trim() || !emailLider) {
       toast.error("Preencha os campos obrigatórios.");
       return;
     }
-    // O envio ainda não grava nada: a tabela de avisos e o fluxo de aprovação não foram criados.
-    toast.info("Formulário pronto. O envio ainda não está ligado ao banco.");
+    try {
+      await criarAviso({
+        tipo: "ausencia",
+        solicitanteEmail: usuario?.email ?? "",
+        solicitanteNome: usuario?.nomeCompleto ?? usuario?.nome ?? "",
+        setor,
+        gestorEmail: emailLider || null,
+        payload: {
+          emailContato: email,
+          dataInicial: data,
+          dataFinal: periodo && dataFim ? dataFim : data,
+          tipoAusencia: tipo,
+          horaInicio: horaInicio,
+          horaFim: horaFim,
+          motivo,
+          observacoes,
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["avisos-minhas"] });
+      toast.success("Solicitação enviada para aprovação.");
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível enviar a solicitação.");
+    }
   }
 
   return (
@@ -213,9 +236,9 @@ export function FormularioAvisoAusencia() {
           <input
             type="email"
             value={emailLider}
-            onChange={(evento) => setEmailLider(evento.target.value)}
-            placeholder="lider@orcoma.com.br"
-            className={CAMPO}
+            readOnly
+            aria-readonly="true"
+            className={`${CAMPO} cursor-not-allowed opacity-80`}
           />
           <span className={AJUDA}>O líder do seu setor receberá um email de notificação sobre esta solicitação</span>
         </label>

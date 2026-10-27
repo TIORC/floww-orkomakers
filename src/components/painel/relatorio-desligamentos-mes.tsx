@@ -34,7 +34,7 @@ export function CardDesligamentosMes({ serie }: { serie: DesligamentosMes[] }) {
               cursor={{ fill: "var(--panel-active)", fillOpacity: 0.3 }}
               formatter={(valor: number) => [valor.toLocaleString("pt-BR"), "Desligamentos"]}
               contentStyle={{
-                background: "var(--background)",
+                background: "#f8fafc", color: "#0f172a",
                 border: "1px solid var(--panel-active)",
                 borderRadius: 8,
               }}

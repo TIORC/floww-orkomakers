@@ -33,6 +33,7 @@ export type CamposEditaveis = {
   situacao: string;
   gestor_direto: string;
   gestor_direto_email: string;
+  sublider_area: string;
 };
 
 export async function atualizarColaborador(id: string, campos: CamposEditaveis) {
@@ -112,6 +113,7 @@ export type DadosDesligamento = {
   tipo: TipoDesligamento;
   motivo: MotivoDesligamento;
   motivoOutros: string;
+  observacao: string;
 };
 
 // Desligamento: marca a situação como Desligado, registra o último dia trabalhado e o motivo.
@@ -132,6 +134,25 @@ export async function desligarColaborador(id: string, dados: DadosDesligamento) 
       tipo_desligamento: dados.tipo,
       motivo_desligamento: dados.motivo,
       motivo_desligamento_outros: dados.motivo === "Outros" ? descricaoOutros : "",
+      observacao_desligamento: dados.observacao.trim(),
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+// Retorno de um colaborador desligado: volta a situação para Ativo e limpa os dados do desligamento,
+// para que ele volte às listas e ao organograma.
+export async function reativarColaborador(id: string) {
+  const { error } = await db
+    .from("colaboradores_importados")
+    .update({
+      situacao: "Ativo",
+      desligamento: "",
+      ultimo_dia_trabalhado: "",
+      tipo_desligamento: "",
+      motivo_desligamento: "",
+      motivo_desligamento_outros: "",
+      observacao_desligamento: "",
     })
     .eq("id", id);
   if (error) throw error;

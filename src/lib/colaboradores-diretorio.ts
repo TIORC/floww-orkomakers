@@ -99,7 +99,12 @@ export async function listarOpcoesDiretorio(): Promise<OpcoesDiretorio> {
   return { unidades: ordenar(unidades), departamentos: ordenar(departamentos), papeis: ordenar(papeis) };
 }
 
-export type ColaboradorDoSetor = ColaboradorDiretorio & { nivelAcesso: string; gestorEmail: string };
+export type ColaboradorDoSetor = ColaboradorDiretorio & {
+  nivelAcesso: string;
+  gestorEmail: string;
+  dataAdmissao: string;
+  subliderArea: string;
+};
 
 // Separa o líder da equipe. Líder é quem tem o nível de acesso Gestor no setor; se ninguém tem, vale o gestor
 // direto mais comum entre as pessoas do setor (quando ele próprio está no setor).
@@ -126,17 +131,31 @@ export function separarLideres(colaboradores: ColaboradorDoSetor[]): {
 // Todos os colaboradores ativos de um setor, em ordem de nome. Sem paginação: o setor inteiro aparece de uma vez.
 // `departamentos` são todas as grafias do setor (ex.: "TI" e "Departamento TI/Desenvolvimento").
 export async function listarColaboradoresDoSetor(departamentos: string[]): Promise<ColaboradorDoSetor[]> {
+  return buscarColaboradoresAtivos((consulta) => consulta.in("departamento", departamentos));
+}
+
+// Subordinados diretos de quem tem este e-mail como gestor, em ordem de nome.
+export async function listarEquipeDireta(emailGestor: string): Promise<ColaboradorDoSetor[]> {
+  return buscarColaboradoresAtivos((consulta) =>
+    consulta.eq("gestor_direto_email", emailGestor),
+  );
+}
+
+async function buscarColaboradoresAtivos(
+  filtrar: (consulta: any) => any,
+): Promise<ColaboradorDoSetor[]> {
   const TAMANHO = 1000;
   const itens: ColaboradorDoSetor[] = [];
   for (let inicio = 0; ; inicio += TAMANHO) {
     const { data, error } = await aplicarSomenteAtivos(
-      db
-        .from("colaboradores_importados")
-        .select("id, nome, email, cargo_visivel, cargo, departamento, foto_url, nivel_acesso, gestor_direto_email")
-        .in("departamento", departamentos)
-        .order("nome", { ascending: true })
-        .order("id", { ascending: true })
-        .range(inicio, inicio + TAMANHO - 1),
+      filtrar(
+        db
+          .from("colaboradores_importados")
+          .select("id, nome, email, cargo_visivel, cargo, departamento, foto_url, nivel_acesso, gestor_direto_email, data_admissao, sublider_area")
+          .order("nome", { ascending: true })
+          .order("id", { ascending: true })
+          .range(inicio, inicio + TAMANHO - 1),
+      ),
     );
     if (error) throw error;
     const lote = data ?? [];
@@ -150,6 +169,8 @@ export async function listarColaboradoresDoSetor(departamentos: string[]): Promi
         fotoUrl: item["foto_url"] ?? "",
         nivelAcesso: item["nivel_acesso"] ?? "colaborador",
         gestorEmail: item["gestor_direto_email"] ?? "",
+        dataAdmissao: item["data_admissao"] ?? "",
+        subliderArea: item["sublider_area"] ?? "",
       });
     }
     if (lote.length < TAMANHO) return itens;

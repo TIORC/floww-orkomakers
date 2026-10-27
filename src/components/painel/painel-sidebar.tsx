@@ -139,7 +139,7 @@ const SECOES_RH: Secao[] = [
   {
     titulo: "Gestão dos Planos de Desenvolvimento",
     icone: CalendarClock,
-    itens: [{ label: "Gestão dos Planos de Desenvolvimento", icon: Settings, to: "/planos-desenvolvimento/gestao" }],
+    itens: [{ label: "Gestão dos Planos de Desenvolvimento", icon: Settings }],
   },
   {
     titulo: "Configurações",

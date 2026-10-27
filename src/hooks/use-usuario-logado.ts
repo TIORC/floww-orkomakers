@@ -59,6 +59,29 @@ export function podeSolicitarFeriasDemo(usuario: UsuarioLogado | null | undefine
   return usuario?.nivelAcesso === "desenvolvedor";
 }
 
+// Programar férias: só Gestores e Administradores (e o Desenvolvedor do Sistema, para demonstração).
+// Programar não efetiva as férias. Colaboradores e Visitantes só veem o próprio calendário.
+export function podeProgramarFerias(usuario: UsuarioLogado | null | undefined) {
+  if (!usuario) return false;
+  return (
+    usuario.acessoMaster ||
+    usuario.nivelAcesso === "gestor" ||
+    usuario.nivelAcesso === "administrador" ||
+    usuario.nivelAcesso === "desenvolvedor"
+  );
+}
+
+// Aprovar ou recusar avisos da equipe: Gestores, Administradores e o Desenvolvedor do Sistema (demonstração).
+export function podeAprovarAvisos(usuario: UsuarioLogado | null | undefined) {
+  if (!usuario) return false;
+  return (
+    usuario.acessoMaster ||
+    usuario.nivelAcesso === "gestor" ||
+    usuario.nivelAcesso === "administrador" ||
+    usuario.nivelAcesso === "desenvolvedor"
+  );
+}
+
 // Desenvolvedor do Sistema e Administradores veem todos os setores; Gestores e Colaboradores, só o próprio.
 export function podeVerTodosOsSetores(usuario: UsuarioLogado | null | undefined) {
   if (!usuario) return false;

@@ -71,7 +71,7 @@ export function CardMotivos({ motivos }: { motivos: MotivoTurnover[] }) {
                     "Desligamentos",
                   ]}
                   contentStyle={{
-                    background: "var(--background)",
+                    background: "#f8fafc", color: "#0f172a",
                     border: "1px solid var(--panel-active)",
                     borderRadius: 8,
                   }}

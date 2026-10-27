@@ -139,6 +139,8 @@ export type Database = {
           matricula: string
           motivo_desligamento: string
           motivo_desligamento_outros: string
+          observacao_desligamento: string
+          sublider_area: string
           nivel_acesso: string
           nome: string
           nome_completo: string
@@ -179,6 +181,8 @@ export type Database = {
           matricula?: string
           motivo_desligamento?: string
           motivo_desligamento_outros?: string
+          observacao_desligamento?: string
+          sublider_area?: string
           nivel_acesso?: string
           nome: string
           nome_completo: string
@@ -219,6 +223,8 @@ export type Database = {
           matricula?: string
           motivo_desligamento?: string
           motivo_desligamento_outros?: string
+          observacao_desligamento?: string
+          sublider_area?: string
           nivel_acesso?: string
           nome?: string
           nome_completo?: string

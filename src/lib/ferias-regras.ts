@@ -4,6 +4,10 @@ import { nomeDoFeriado } from "@/lib/feriados";
 // remunerado (DSR). Aqui o DSR é o domingo, então sexta e sábado também não podem ser o primeiro dia.
 // Feriado que cai dentro das férias conta como dia de férias normalmente: não é pulado nem estende o período.
 
+// CLT, art. 136: a época da concessão é a que melhor consulte os interesses do empregador.
+export const REGRA_EPOCA_DAS_FERIAS =
+  "Art. 136 - A época da concessão das férias será a que melhor consulte os interesses do empregador.";
+
 export const REGRA_INICIO_DAS_FERIAS =
   "As férias não podem começar nos dois dias que antecedem feriado ou o descanso semanal (CLT, art. 134, §3º).";
 

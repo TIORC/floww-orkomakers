@@ -196,7 +196,6 @@
 .logo-marquee-item {
   filter: grayscale(1);
   transition: filter 0.3s ease;
-  backface-visibility: hidden;
 }
 
 .logo-marquee-item:hover {
