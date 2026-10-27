@@ -26,6 +26,7 @@ import {
   formatarHorarioComSinal,
   formatarTotal,
   lerEspelhoDoArquivo,
+  textoParaMinutos,
   textoParaMinutosComSinal,
   textoParaMinutosNegativo,
 } from "@/lib/espelho-ponto";
@@ -76,12 +77,18 @@ function corCompensacao(linha: LinhaGrade) {
   return undefined;
 }
 
-// Colunas calculadas a partir do PDF: aparecem na grade mas não são editáveis.
-function colunaCalculada(
+// Horas lidas do PDF. Elas podem ser corrigidas na tabela; digita-se HH:MM (ex.: 79:00).
+function colunaDeHoras(
   chave: "horasExtras" | "horasFaltas" | "trabalhado",
   titulo: string,
 ): ColunaGrade<LinhaGrade> {
-  return { chave, titulo, editavel: false, texto: (linha) => formatarHorario(linha[chave]) };
+  return {
+    chave,
+    titulo,
+    editavel: true,
+    texto: (linha) => formatarHorario(linha[chave]),
+    exibir: (linha) => formatarHorario(linha[chave]) || VAZIO,
+  };
 }
 
 // As colunas seguem a planilha do banco de horas.
@@ -129,9 +136,9 @@ function montarColunas(abrirEspelho: (linha: LinhaGrade) => void): ColunaGrade<L
       },
       classe: (linha) => (linha.saldoManual === null ? "italic text-white/60" : undefined),
     },
-    colunaCalculada("horasExtras", "Horas extras"),
-    colunaCalculada("horasFaltas", "Horas faltas"),
-    colunaCalculada("trabalhado", "Horas trabalhadas"),
+    colunaDeHoras("horasExtras", "Horas extras"),
+    colunaDeHoras("horasFaltas", "Horas faltas"),
+    colunaDeHoras("trabalhado", "Horas trabalhadas"),
     {
       chave: "pagarDescontar",
       titulo: "Horas pagar / descontar",
@@ -321,6 +328,11 @@ function BancoDeHorasPage() {
       const minutos = textoParaMinutosComSinal(valor);
       if (minutos === null)
         return `"${valor}" não é um valor válido. Use +HH:MM ou -HH:MM, por exemplo -13:00.`;
+      novoValor = minutos;
+    } else if (chave === "horasExtras" || chave === "horasFaltas" || chave === "trabalhado") {
+      const minutos = textoParaMinutos(valor);
+      if (minutos === null)
+        return `"${valor}" não é um valor válido. Use HH:MM, por exemplo 79:00.`;
       novoValor = minutos;
     } else if (chave === "pagarDescontar") {
       const minutos = textoParaMinutosNegativo(valor);

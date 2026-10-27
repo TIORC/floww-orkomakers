@@ -15,9 +15,9 @@ export const LIMITE_MOTIVO = 12000;
 export const EMOCOES_SENTIMENTO = [
   { id: "muito_triste", rotulo: "Muito triste", imagem: "/images/sentimento/Very_Sad.png" },
   { id: "triste", rotulo: "Triste", imagem: "/images/sentimento/sad.png" },
-  { id: "neutro", rotulo: "Neutro", imagem: "/images/sentimento/Neutral.png" },
-  { id: "feliz", rotulo: "Feliz", imagem: "/images/sentimento/Happy.png" },
-  { id: "muito_feliz", rotulo: "Muito feliz", imagem: "/images/sentimento/Very_Happy.png" },
+  { id: "neutro", rotulo: "Neutro", imagem: "/images/sentimento/leao-neutro.webp" },
+  { id: "feliz", rotulo: "Feliz", imagem: "/images/sentimento/leao-feliz.webp" },
+  { id: "muito_feliz", rotulo: "Muito feliz", imagem: "/images/sentimento/leao-muito-feliz.webp" },
 ] as const;
 
 export type EmocaoSentimento = (typeof EMOCOES_SENTIMENTO)[number]["id"];
@@ -40,10 +40,10 @@ function CabecalhoCheckin() {
   return (
     <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-3">
       <img
-        src="/images/sentimento/Very_Happy.png"
+        src="/images/sentimento/leao-muito-feliz.webp"
         alt=""
         aria-hidden="true"
-        className="size-12 shrink-0 object-contain sm:size-14"
+        className="size-16 shrink-0 object-contain sm:size-20"
       />
       <div>
         <h2 id={TITULO_CHECKIN} className="font-display text-xl font-semibold text-foreground">
@@ -97,8 +97,10 @@ function SeletorEmocoes({
               src={emocao.imagem}
               alt=""
               aria-hidden="true"
+              animate={{ rotate: 0, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
               whileHover={ANIMACAO_HOVER[emocao.id]}
-              className="h-auto w-full max-w-[4.8rem] object-contain sm:max-w-[5.6rem]"
+              className="h-auto w-full max-w-[7.2rem] object-contain sm:max-w-[8.8rem]"
             />
           </motion.button>
         );

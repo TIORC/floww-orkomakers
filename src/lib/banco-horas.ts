@@ -30,8 +30,11 @@ export type EspelhoSalvo = {
   observacao: string;
 };
 
-// Campos que o RH edita na tela, com o nome da coluna no banco.
+// Campos que o RH edita na tela, com o nome da coluna no banco. As três horas vêm do PDF, mas podem ser corrigidas.
 const COLUNA_DO_CAMPO = {
+  horasExtras: "horas_extras_min",
+  horasFaltas: "horas_faltas_min",
+  trabalhado: "horas_trabalhadas_min",
   saldoAnterior: "saldo_anterior_min",
   pagarDescontar: "horas_pagar_desc_min",
   compensar: "horas_compensar_min",
