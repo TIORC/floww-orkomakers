@@ -1,6 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
 
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { ModalBaterPonto } from "@/components/ponto/modal-bater-ponto";
 import { supabase } from "@/integrations/supabase/client";
 import { useUsuarioLogado } from "@/hooks/use-usuario-logado";
 import { motion } from "framer-motion";
@@ -42,6 +44,7 @@ export function PerfilFlutuante() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: usuario, isPending } = useUsuarioLogado();
+  const [pontoAberto, setPontoAberto] = useState(false);
 
   async function sair() {
     await queryClient.cancelQueries();
@@ -62,6 +65,17 @@ export function PerfilFlutuante() {
       className="fixed left-64 right-0 top-0 z-40 flex h-16 items-center justify-end gap-5 bg-background/70 px-6 backdrop-blur-md"
     >
       <div className="flex items-center gap-4">
+        {/* Pill de ponto: ainda sem ação, a funcionalidade vem depois. */}
+        <motion.button
+          type="button"
+          onClick={() => setPontoAberto(true)}
+          whileHover={{ y: -2, scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: "spring", stiffness: 400, damping: 18 }}
+          className="min-w-36 rounded-full bg-yellow-400 px-8 py-2 text-sm font-bold text-black transition-colors hover:bg-yellow-300 focus-visible:outline-none"
+        >
+          Bater Ponto
+        </motion.button>
         {ACOES_RAPIDAS.map(({ rotulo, icone: Icone, to }) => (
           <motion.button
             key={rotulo}
@@ -79,6 +93,7 @@ export function PerfilFlutuante() {
         ))}
         <NotificacoesPainel />
       </div>
+      <ModalBaterPonto aberto={pontoAberto} aoMudarAberto={setPontoAberto} />
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-3 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-brand">
           <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-panel-active text-panel-text">

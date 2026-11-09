@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, BriefcaseBusiness, CalendarDays, Check, ChevronRight, FileText, Mail, MapPin, Phone, Plus, Search, Users } from "lucide-react";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import { AbrirProcessoDialog, type NovoProcessoSeletivo } from "@/components/processos-seletivos/abrir-processo-dialog";
 import { PERFIS_DISC, TONS_DISC, type PerfilDisc, type PercentuaisDisc } from "@/components/processos-seletivos/perfis-disc";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
@@ -88,7 +87,7 @@ function ProcessosPage() {
     toast.success(`Processo seletivo aberto para ${novo.cargo}.`);
   };
 
-  return <div className="flex min-h-screen w-full bg-background"><PainelSidebar /><main className="min-w-0 flex-1 px-10 pb-10 pt-24"><PerfilFlutuante />
+  return <div className="flex min-h-screen w-full bg-background"><PainelSidebar /><main className="min-w-0 flex-1 px-10 pb-10 pt-24">
     <Card className="min-h-[34rem] rounded-2xl shadow-sm"><CardContent className="p-6 sm:p-8">
       {vagaSelecionada ? <>
         <div className="mb-7 flex flex-wrap items-start justify-between gap-4">

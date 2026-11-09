@@ -7,7 +7,6 @@ import { CartaoColaborador } from "@/components/ferias/cartao-colaborador";
 import { CalendarioAnual, type SelecaoPeriodo } from "@/components/ferias/calendario-anual";
 import { CartaoProgramacao } from "@/components/ferias/cartao-programacao";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import { listarEquipeDireta } from "@/lib/colaboradores-diretorio";
 import {
   listarEmailsComFeriasProgramadas,
@@ -21,6 +20,7 @@ import {
   podeVerTodosOsSetores,
   useUsuarioLogado,
 } from "@/hooks/use-usuario-logado";
+import { useFeriadosCadastrados } from "@/hooks/use-feriados";
 import { buscarPessoasOrganograma } from "@/lib/organograma-dados";
 import { motivoDeBloqueioDoInicio } from "@/lib/ferias-regras";
 import { ordenarPeriodo } from "@/lib/calendario";
@@ -90,6 +90,7 @@ function ProgramacaoFeriasPage() {
   const [selecao, setSelecao] = useState<SelecaoPeriodo>({ inicio: null, fim: null });
   const [salvando, setSalvando] = useState(false);
   const [remocaoPendente, setRemocaoPendente] = useState<string | null>(null);
+  const { feriados } = useFeriadosCadastrados();
 
   // A equipe segue a hierarquia do organograma (gestor direto), não o setor.
   // Quem vê todos os setores escolhe um gestor; os outros veem sempre a própria equipe.
@@ -127,6 +128,7 @@ function ProgramacaoFeriasPage() {
     ? [
         {
           id: gestorAlvo.id,
+          email: gestorAlvo.email,
           nome: gestorAlvo.nome,
           cargoVisivel: gestorAlvo.cargo,
           fotoUrl: gestorAlvo.fotoUrl ?? "",
@@ -207,7 +209,7 @@ function ProgramacaoFeriasPage() {
   function escolherDia(iso: string) {
     setSelecao((atual) => {
       if (atual.inicio && !atual.fim) return { inicio: atual.inicio, fim: iso };
-      return motivoDeBloqueioDoInicio(iso) ? atual : { inicio: iso, fim: null };
+      return motivoDeBloqueioDoInicio(iso, feriados) ? atual : { inicio: iso, fim: null };
     });
   }
 
@@ -249,7 +251,6 @@ function ProgramacaoFeriasPage() {
           <h1 className="font-display text-3xl font-semibold text-white">Programação de Férias</h1>
           <p className="mt-4 text-sm text-white/80">Você não tem acesso a esta página.</p>
         </main>
-        <PerfilFlutuante />
       </div>
     );
   }
@@ -331,14 +332,26 @@ function ProgramacaoFeriasPage() {
                 <ul aria-label="Liderança" className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
                   {lideres.map((lider) => (
                     <li key={lider.id}>
-                      <CartaoColaborador
-                        lider
-                        nome={lider.nome}
-                        cargo={lider.cargoVisivel}
-                        fotoUrl={lider.fotoUrl}
-                        dataAdmissao={lider.dataAdmissao}
-                        programado={gestorAlvo ? estaProgramado(gestorAlvo.email) : false}
-                      />
+                      {/* O líder também é programável: pode programar as próprias férias (ou as de quem ele lidera). */}
+                      <CartaoDaEquipe
+                        pessoa={{ email: lider.email, nome: lider.nome }}
+                        podeEscolher={podeProgramar}
+                        selecionado={colaboradorSelecionado?.email === lider.email}
+                        aoEscolher={escolherColaborador}
+                      >
+                        <CartaoColaborador
+                          lider
+                          nome={lider.nome}
+                          cargo={lider.cargoVisivel}
+                          fotoUrl={lider.fotoUrl}
+                          dataAdmissao={lider.dataAdmissao}
+                          programado={estaProgramado(lider.email)}
+                          feriasProgramadas={
+                            colaboradorSelecionado?.email === lider.email ? periodosFormatados : []
+                          }
+                          aoRemoverFerias={podeProgramar ? removerFerias : undefined}
+                        />
+                      </CartaoDaEquipe>
                     </li>
                   ))}
                 </ul>
@@ -427,11 +440,16 @@ function ProgramacaoFeriasPage() {
             aoMudarAno={setAno}
             selecao={selecao}
             programados={programados}
-            {...(escolhendoColaborador ? { aoEscolherDia: escolherDia, motivoDeBloqueioDoInicio } : {})}
+            feriados={feriados}
+            {...(escolhendoColaborador
+              ? {
+                  aoEscolherDia: escolherDia,
+                  motivoDeBloqueioDoInicio: (iso: string) => motivoDeBloqueioDoInicio(iso, feriados),
+                }
+              : {})}
           />
         </section>
       </main>
-      <PerfilFlutuante />
 
       {remocaoPendente && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">

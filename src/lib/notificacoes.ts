@@ -46,6 +46,11 @@ export async function contarNaoLidas(email: string): Promise<number> {
   return count ?? 0;
 }
 
+export async function marcarComoLida(id: string) {
+  const { error } = await db.from("notificacoes").update({ lida: true }).eq("id", id);
+  if (error) throw error;
+}
+
 export async function marcarTodasComoLidas(email: string) {
   const { error } = await db
     .from("notificacoes")

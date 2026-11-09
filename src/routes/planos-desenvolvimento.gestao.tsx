@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 
 export const Route = createFileRoute("/planos-desenvolvimento/gestao")({
   head: () => ({
@@ -17,7 +16,6 @@ function GestaoPlanosPage() {
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
       <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
-        <PerfilFlutuante />
         <section className="rounded-2xl border border-panel-active bg-panel p-6 sm:p-8">
           <header className="flex items-start gap-3">
             <Settings className="mt-1 size-6 shrink-0 text-brand" aria-hidden />

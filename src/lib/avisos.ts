@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { SolicitacaoAviso, StatusSolicitacao, TipoSolicitacao } from "@/components/painel/minhas-solicitacoes";
+import { ROTULO_TIPO, type SolicitacaoAviso, type StatusSolicitacao, type TipoSolicitacao } from "@/components/painel/minhas-solicitacoes";
 import { supabase } from "@/integrations/supabase/client";
+import { registrarNotificacao } from "@/lib/notificacoes";
 
 // A tipagem gerada do banco ainda não inclui a tabela avisos.
 const db = supabase as unknown as SupabaseClient<any>;
@@ -99,6 +100,12 @@ export async function listarAvisosParaAprovar(): Promise<SolicitacaoAviso[]> {
   return (data ?? []).map(mapearAviso);
 }
 
+// Exclui uma solicitação própria. Só administradores conseguem (o RLS garante isso no banco).
+export async function excluirAviso(id: string) {
+  const { error } = await db.from("avisos").delete().eq("id", id);
+  if (error) throw error;
+}
+
 // Aprova ou recusa um aviso pendente. Recusar exige o motivo.
 export async function decidirAviso(
   id: string,
@@ -106,7 +113,7 @@ export async function decidirAviso(
   motivoRecusa: string,
   decididoPor: { email: string; nome: string },
 ) {
-  const { error } = await db
+  const { data, error } = await db
     .from("avisos")
     .update({
       status: decisao,
@@ -116,6 +123,24 @@ export async function decidirAviso(
       decidido_em: new Date().toISOString(),
     })
     .eq("id", id)
-    .eq("status", "pendente");
+    .eq("status", "pendente")
+    .select("solicitante_email, tipo");
   if (error) throw error;
+
+  // Avisa o solicitante no sino. Se a notificação falhar, a decisão já foi gravada e não é desfeita.
+  const aviso = (data ?? [])[0] as { solicitante_email: string; tipo: TipoSolicitacao } | undefined;
+  if (!aviso) return;
+  try {
+    await registrarNotificacao({
+      destinatarioEmail: aviso.solicitante_email,
+      tipo: decisao === "aprovado" ? "aviso_permitido" : "aviso_negado",
+      texto:
+        decisao === "aprovado"
+          ? `permitiu sua solicitação de ${ROTULO_TIPO[aviso.tipo]}`
+          : `negou sua solicitação de ${ROTULO_TIPO[aviso.tipo]}`,
+      atorNome: decididoPor.nome,
+    });
+  } catch {
+    // Sem notificação, o colaborador ainda vê o resultado em "Minhas Solicitações".
+  }
 }

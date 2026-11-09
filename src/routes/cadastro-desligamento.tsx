@@ -21,7 +21,6 @@ import { FileSpreadsheet, Plus, Search, UsersRound } from "lucide-react";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
 import { CadastrarColaboradorDialog } from "@/components/painel/cadastrar-colaborador-dialog";
 import { DesligadosDialog } from "@/components/painel/desligados-dialog";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 
 export const Route = createFileRoute("/cadastro-desligamento")({
   head: () => ({

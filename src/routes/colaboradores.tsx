@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Mail, UserRound } from "lucide-react";
 
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   CARTOES_POR_PAGINA,
@@ -160,7 +159,6 @@ function ColaboradoresPage() {
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
       <main className="min-w-0 flex-1 space-y-6 px-10 pb-10 pt-24">
-        <PerfilFlutuante />
         <section className="rounded-2xl border border-panel-active bg-panel p-6">
           <h1 className="font-display text-3xl font-semibold text-white">Colaboradores</h1>
           <p className="mt-1 text-sm text-white/80">

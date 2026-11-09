@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
 
 import {
   Dialog,
@@ -41,8 +42,8 @@ export const ROTULO_TIPO: Record<TipoSolicitacao, string> = {
 
 export const ESTILO_STATUS: Record<StatusSolicitacao, { rotulo: string; classes: string }> = {
   pendente: { rotulo: "Pendente", classes: "bg-yellow-400 text-slate-900" },
-  aprovado: { rotulo: "Aprovado", classes: "bg-emerald-800 text-white" },
-  recusado: { rotulo: "Recusado", classes: "bg-red-900 text-white" },
+  aprovado: { rotulo: "Permitido", classes: "bg-emerald-800 text-white" },
+  recusado: { rotulo: "Negado", classes: "bg-red-900 text-white" },
 };
 
 // DEMONSTRAÇÃO: dados fictícios só para ver o visual. Serão trocados pelos avisos gravados no banco.
@@ -149,14 +150,14 @@ export function DetalheSolicitacao({
 
             {solicitacao.decididoPor && (
               <p className="text-sm text-slate-700">
-                {solicitacao.status === "aprovado" ? "Aprovado" : "Recusado"} por{" "}
+                {solicitacao.status === "aprovado" ? "Permitido" : "Negado"} por{" "}
                 <strong className="font-semibold text-slate-900">{solicitacao.decididoPor}</strong>
               </p>
             )}
 
             {solicitacao.status === "recusado" && solicitacao.motivoRecusa && (
               <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
-                <strong className="font-semibold">Motivo da recusa:</strong> {solicitacao.motivoRecusa}
+                <strong className="font-semibold">Motivo da negação:</strong> {solicitacao.motivoRecusa}
               </p>
             )}
 
@@ -179,8 +180,28 @@ export function DetalheSolicitacao({
 }
 
 // Lista das solicitações da própria pessoa. Clicar num card abre o detalhe.
-export function MinhasSolicitacoes({ solicitacoes }: { solicitacoes: SolicitacaoAviso[] }) {
+// Administradores (podeExcluir) veem o botão para excluir a própria solicitação.
+export function MinhasSolicitacoes({
+  solicitacoes,
+  aoExcluir,
+}: {
+  solicitacoes: SolicitacaoAviso[];
+  // Presente só para administradores: exclui a solicitação e atualiza a lista.
+  aoExcluir?: ((id: string) => Promise<void>) | undefined;
+}) {
   const [detalhe, setDetalhe] = useState<SolicitacaoAviso | null>(null);
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
+
+  async function excluir(solicitacao: SolicitacaoAviso) {
+    if (!aoExcluir) return;
+    if (!window.confirm("Excluir esta solicitação? Essa ação não pode ser desfeita.")) return;
+    setExcluindoId(solicitacao.id);
+    try {
+      await aoExcluir(solicitacao.id);
+    } finally {
+      setExcluindoId(null);
+    }
+  }
 
   if (solicitacoes.length === 0) {
     return (
@@ -226,17 +247,31 @@ export function MinhasSolicitacoes({ solicitacoes }: { solicitacoes: Solicitacao
 
                 {solicitacao.decididoPor && (
                   <p className="mt-1 text-sm text-white/80">
-                    {solicitacao.status === "aprovado" ? "Aprovado" : "Recusado"} por{" "}
+                    {solicitacao.status === "aprovado" ? "Permitido" : "Negado"} por{" "}
                     <strong className="font-semibold text-white">{solicitacao.decididoPor}</strong>
                   </p>
                 )}
 
                 {solicitacao.status === "recusado" && solicitacao.motivoRecusa && (
                   <p className="mt-2 rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-200">
-                    <strong className="font-semibold">Motivo da recusa:</strong> {solicitacao.motivoRecusa}
+                    <strong className="font-semibold">Motivo da negação:</strong> {solicitacao.motivoRecusa}
                   </p>
                 )}
               </button>
+              {aoExcluir && (
+                <div className="mt-2 flex justify-end">
+                  <button
+                    type="button"
+                    aria-label="Excluir solicitação"
+                    title="Excluir solicitação"
+                    disabled={excluindoId === solicitacao.id}
+                    onClick={() => excluir(solicitacao)}
+                    className="rounded-full p-1.5 text-panel-label transition hover:text-red-400 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                  </button>
+                </div>
+              )}
             </li>
           );
         })}

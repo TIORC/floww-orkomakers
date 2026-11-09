@@ -1,17 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, CalendarOff, Clock, RotateCcw } from "lucide-react";
 
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import { FormularioAvisoAusencia } from "@/components/painel/formulario-aviso-ausencia";
 import { FormularioHoraExtra } from "@/components/painel/formulario-hora-extra";
 import { FundoAvisoSvg } from "@/components/painel/fundo-aviso-svg";
 import { FormularioRetrabalho } from "@/components/painel/formulario-retrabalho";
 import { MinhasSolicitacoes } from "@/components/painel/minhas-solicitacoes";
-import { listarAvisosParaAprovar, listarMeusAvisos } from "@/lib/avisos";
-import { useQuery } from "@tanstack/react-query";
+import { excluirAviso, listarAvisosParaAprovar, listarMeusAvisos } from "@/lib/avisos";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { AguardandoAprovacao } from "@/components/painel/aguardando-aprovacao";
 import { podeAprovarAvisos, useUsuarioLogado } from "@/hooks/use-usuario-logado";
 import { cn } from "@/lib/utils";
@@ -64,6 +64,11 @@ const AVISOS = [
 ];
 
 export const Route = createFileRoute("/horas-extras-faltas")({
+  // Permite abrir direto em uma aba: /horas-extras-faltas?aba=minhas (usado pelas notificações).
+  validateSearch: (busca: Record<string, unknown>): { aba?: "solicitacao" | "minhas" | "aguardando" } => {
+    const valor = busca["aba"];
+    return valor === "minhas" || valor === "aguardando" || valor === "solicitacao" ? { aba: valor } : {};
+  },
   head: () => ({
     meta: [{ title: "Horas Extras e Horas Faltas — Orcoma Orkomakers" }],
   }),
@@ -74,8 +79,14 @@ function HorasExtrasFaltasPage() {
   // Card aberto em tela cheia. Quando há um, o outro some.
   const [selecionado, setSelecionado] = useState<string | null>(null);
   // Alterna entre fazer uma nova solicitação e ver as solicitações já feitas.
-  const [aba, setAba] = useState<Aba>("solicitacao");
+  const { aba: abaNaUrl } = Route.useSearch();
+  const [aba, setAba] = useState<Aba>(abaNaUrl ?? "solicitacao");
+  // Se a página já está aberta e a URL muda (ex.: clique numa notificação), acompanha a mudança.
+  useEffect(() => {
+    if (abaNaUrl) setAba(abaNaUrl);
+  }, [abaNaUrl]);
   const { data: usuario } = useUsuarioLogado();
+  const queryClient = useQueryClient();
   const podeAprovar = podeAprovarAvisos(usuario);
   // Avisos enviados pela pessoa, e avisos pendentes que chegam a ela para aprovar.
   const meusAvisos = useQuery({
@@ -83,6 +94,16 @@ function HorasExtrasFaltasPage() {
     queryFn: () => listarMeusAvisos(usuario?.email ?? ""),
     enabled: Boolean(usuario?.email),
   });
+  // Exclui uma solicitação própria (só aparece para o Desenvolvedor do Sistema) e atualiza a lista.
+  async function excluirMinhaSolicitacao(id: string) {
+    try {
+      await excluirAviso(id);
+      await queryClient.invalidateQueries({ queryKey: ["avisos-minhas"] });
+      toast.success("Solicitação excluída.");
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível excluir a solicitação.");
+    }
+  }
   const avisosParaAprovar = useQuery({
     queryKey: ["avisos-aguardando"],
     queryFn: listarAvisosParaAprovar,
@@ -155,7 +176,12 @@ function HorasExtrasFaltasPage() {
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
-            {aba === "minhas" && <MinhasSolicitacoes solicitacoes={meusAvisos.data ?? []} />}
+            {aba === "minhas" && (
+              <MinhasSolicitacoes
+                solicitacoes={meusAvisos.data ?? []}
+                aoExcluir={usuario?.nivelAcesso === "desenvolvedor" ? excluirMinhaSolicitacao : undefined}
+              />
+            )}
 
             {aba === "aguardando" && podeAprovar && <AguardandoAprovacao solicitacoes={avisosParaAprovar.data ?? []} />}
 
@@ -237,7 +263,6 @@ function HorasExtrasFaltasPage() {
           </motion.div>
         </AnimatePresence>
       </main>
-      <PerfilFlutuante />
     </div>
   );
 }

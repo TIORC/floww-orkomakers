@@ -60,8 +60,8 @@ function Index() {
       <PainelSidebar />
       <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
         <img
-          src="/images/aniversariantes-outubro.jpg"
-          alt="Aniversariantes do mês de outubro"
+          src="/images/aniversariantes-novembro.png"
+          alt="Aniversariantes do mês de novembro"
           width={BANNER_WIDTH}
           height={BANNER_HEIGHT}
           className="relative -left-6 mt-8 ml-auto block h-auto w-full max-w-full rounded-md"

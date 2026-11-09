@@ -2,7 +2,6 @@ import { useState, type ReactNode } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import { cn } from "@/lib/utils";
 
 // Modelo compartilhado das páginas de pesquisa (Satisfação, Rápida, Super, Engajamento, Desligamento e Riscos).

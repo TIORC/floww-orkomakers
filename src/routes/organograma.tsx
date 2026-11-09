@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { Minus, Plus, UserRound } from "lucide-react";
 
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { buscarPessoasOrganograma } from "@/lib/organograma-dados";
 import { getIniciais } from "@/lib/iniciais";
@@ -125,7 +124,6 @@ function OrganogramaPage() {
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
       <main className="flex min-w-0 flex-1 flex-col px-10 pb-10 pt-24">
-        <PerfilFlutuante />
         <section className="flex flex-1 flex-col rounded-2xl border border-panel-active bg-panel p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="font-display text-2xl font-semibold text-white">Organograma</h1>

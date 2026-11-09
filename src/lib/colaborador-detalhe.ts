@@ -158,6 +158,21 @@ export async function reativarColaborador(id: string) {
   if (error) throw error;
 }
 
+// Fim de um afastamento: volta a situação para Ativo e limpa o motivo e o prazo da desativação.
+// Não mexe em desligamento, então não altera os relatórios de turnover.
+export async function reativarDesativado(id: string) {
+  const { error } = await db
+    .from("colaboradores_importados")
+    .update({
+      situacao: "Ativo",
+      motivo_desativacao: "",
+      motivo_desativacao_outros: "",
+      desativacao_ate: null,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 export const MOTIVOS_DESATIVACAO = [
   "Férias",
   "Licença Maternidade",

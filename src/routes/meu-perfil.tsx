@@ -5,7 +5,6 @@ import { Camera, User } from "lucide-react";
 import { toast } from "sonner";
 
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import { useUsuarioLogado } from "@/hooks/use-usuario-logado";
 import { enviarFotoPerfil } from "@/lib/foto-perfil.functions";
 import { atualizarCargoVisivel } from "@/lib/perfil.functions";

@@ -9,7 +9,7 @@ import {
   paraIso,
   semanasDoMes,
 } from "@/lib/calendario";
-import { nomeDoFeriado } from "@/lib/feriados";
+import { nomeDoFeriado, type FeriadoCadastrado } from "@/lib/feriados";
 import { cn } from "@/lib/utils";
 
 export type SelecaoPeriodo = { inicio: string | null; fim: string | null };
@@ -26,6 +26,8 @@ type Props = {
   programados?: PeriodoProgramadoCalendario[];
   // Relatórios podem olhar datas passadas; a programação de férias não.
   permitirPassado?: boolean;
+  // Feriados cadastrados pelo RH, somados aos calculados automaticamente.
+  feriados?: FeriadoCadastrado[];
 };
 
 export type PeriodoProgramadoCalendario = { inicio: string; fim: string };
@@ -41,6 +43,7 @@ type PropsMes = {
   programados: PeriodoProgramadoCalendario[];
   permitirPassado: boolean;
   aoPassarPor: (iso: string | null) => void;
+  feriados: FeriadoCadastrado[];
 };
 
 function Mes({
@@ -54,6 +57,7 @@ function Mes({
   programados,
   permitirPassado,
   aoPassarPor,
+  feriados,
 }: PropsMes) {
   const semanas = semanasDoMes(ano, mes);
 
@@ -102,7 +106,7 @@ function Mes({
                 const ehFim = periodo !== null && iso === periodo.fim;
                 const dentro = periodo !== null && iso >= periodo.inicio && iso <= periodo.fim;
                 const programado = programados.some((p) => iso >= p.inicio && iso <= p.fim);
-                const feriado = nomeDoFeriado(iso);
+                const feriado = nomeDoFeriado(iso, feriados);
                 const bloqueio = escolhendoInicio ? motivoDeBloqueioDoInicio?.(iso) : null;
                 const desabilitado = passado || !!bloqueio;
                 const textoFeriado = feriado
@@ -169,6 +173,7 @@ export function CalendarioAnual({
   motivoDeBloqueioDoInicio,
   programados = [],
   permitirPassado = false,
+  feriados = [],
 }: Props) {
   const hoje = hojeIso();
   const anoAtual = Number(hoje.slice(0, 4));
@@ -229,6 +234,7 @@ export function CalendarioAnual({
             programados={programados}
             permitirPassado={permitirPassado}
             aoPassarPor={setPrevia}
+            feriados={feriados}
           />
         ))}
       </div>

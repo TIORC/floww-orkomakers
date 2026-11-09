@@ -24,7 +24,7 @@ export function AguardandoAprovacao({ solicitacoes }: { solicitacoes: Solicitaca
   async function decidir(solicitacao: SolicitacaoAviso, decisao: "aprovado" | "recusado") {
     if (!usuario) return;
     if (decisao === "recusado" && !motivo.trim()) {
-      toast.error("Informe o motivo da recusa.");
+      toast.error("Informe o motivo da negação.");
       return;
     }
     setProcessandoId(solicitacao.id);
@@ -34,7 +34,7 @@ export function AguardandoAprovacao({ solicitacoes }: { solicitacoes: Solicitaca
         nome: usuario.nomeCompleto ?? usuario.nome,
       });
       await queryClient.invalidateQueries({ queryKey: ["avisos-aguardando"] });
-      toast.success(decisao === "aprovado" ? "Aviso aprovado." : "Aviso recusado.");
+      toast.success(decisao === "aprovado" ? "Solicitação permitida." : "Solicitação negada.");
       setRecusandoId(null);
       setMotivo("");
     } catch (erro) {
@@ -99,12 +99,12 @@ export function AguardandoAprovacao({ solicitacoes }: { solicitacoes: Solicitaca
                 >
                   {recusando && (
                     <label className="grid gap-1.5 text-sm font-semibold text-white">
-                      Motivo da recusa *
+                      Motivo da negação *
                       <textarea
                         value={motivo}
                         onChange={(evento) => setMotivo(evento.target.value)}
                         rows={3}
-                        placeholder="Explique o motivo da recusa"
+                        placeholder="Explique o motivo da negação"
                         className="rounded-lg border border-panel-active bg-background px-3 py-2 text-sm font-normal text-white outline-none focus-visible:ring-2 focus-visible:ring-brand"
                       />
                     </label>
@@ -130,7 +130,7 @@ export function AguardandoAprovacao({ solicitacoes }: { solicitacoes: Solicitaca
                           className="inline-flex items-center gap-2 rounded-lg bg-red-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:opacity-60"
                         >
                           <X className="size-4" aria-hidden />
-                          Confirmar recusa
+                          Confirmar negação
                         </button>
                       </>
                     ) : (
@@ -145,7 +145,7 @@ export function AguardandoAprovacao({ solicitacoes }: { solicitacoes: Solicitaca
                           className="inline-flex items-center gap-2 rounded-lg border border-red-700 px-4 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-950/40 disabled:opacity-60"
                         >
                           <X className="size-4" aria-hidden />
-                          Recusar
+                          Negar
                         </button>
                         <button
                           type="button"
@@ -154,7 +154,7 @@ export function AguardandoAprovacao({ solicitacoes }: { solicitacoes: Solicitaca
                           className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
                         >
                           <Check className="size-4" aria-hidden />
-                          Aprovar
+                          Permitir
                         </button>
                       </>
                     )}

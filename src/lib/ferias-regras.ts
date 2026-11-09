@@ -1,4 +1,4 @@
-import { nomeDoFeriado } from "@/lib/feriados";
+import { nomeDoFeriado, type FeriadoCadastrado } from "@/lib/feriados";
 
 // CLT, art. 134, §3º: é vedado o início das férias nos dois dias que antecedem feriado ou dia de repouso semanal
 // remunerado (DSR). Aqui o DSR é o domingo, então sexta e sábado também não podem ser o primeiro dia.
@@ -23,15 +23,16 @@ function maisDias(iso: string, dias: number): string {
 }
 
 // Pontos facultativos (Carnaval, Corpus Christi) não são feriados legais, então não entram na regra.
-function feriadoLegal(iso: string): string | undefined {
-  const nome = nomeDoFeriado(iso);
+// Feriados cadastrados pelo RH (federal, estadual, municipal ou interno) também contam para a regra.
+function feriadoLegal(iso: string, cadastrados: FeriadoCadastrado[]): string | undefined {
+  const nome = nomeDoFeriado(iso, cadastrados);
   return nome && !nome.includes("ponto facultativo") ? nome : undefined;
 }
 
 // Por que esta data não pode ser o primeiro dia das férias, ou null se pode.
-export function motivoDeBloqueioDoInicio(iso: string): string | null {
+export function motivoDeBloqueioDoInicio(iso: string, cadastrados: FeriadoCadastrado[] = []): string | null {
   for (const antes of [1, 2]) {
-    const feriado = feriadoLegal(maisDias(iso, antes));
+    const feriado = feriadoLegal(maisDias(iso, antes), cadastrados);
     if (feriado) {
       return `Não pode começar nos 2 dias antes de feriado (${feriado}, em ${maisDias(iso, antes).split("-").reverse().join("/")}).`;
     }

@@ -5,7 +5,6 @@ import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import { excluirSetor, listarSetoresCompletos, salvarSetor, type Setor } from "@/lib/setores";
 
 export const Route = createFileRoute("/setores")({
@@ -101,7 +100,6 @@ function SetoresPage() {
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
       <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
-        <PerfilFlutuante />
         <section className="rounded-2xl border border-panel-active bg-panel p-6 sm:p-8">
           <header className="flex flex-wrap items-start justify-between gap-4">
             <div>

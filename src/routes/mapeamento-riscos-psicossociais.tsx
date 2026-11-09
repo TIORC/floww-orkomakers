@@ -3,7 +3,6 @@ import { useState } from "react";
 import { BarChart3, Sparkles } from "lucide-react";
 
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/mapeamento-riscos-psicossociais")({

@@ -8,7 +8,6 @@ import {
 } from "@/components/painel/pesquisa-pagina";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
 import { RelatorioTurnover } from "@/components/painel/relatorio-turnover";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import {
   Dialog,
   DialogContent,
@@ -71,7 +70,6 @@ function PesquisaDesligamentoPage() {
           <RelatorioTurnover />
         </div>
       </main>
-      <PerfilFlutuante />
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { BriefcaseBusiness, Plus } from "lucide-react";
 
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -52,7 +51,6 @@ function VagasPage() {
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
       <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
-        <PerfilFlutuante />
         <Card className="min-h-[34rem] rounded-2xl shadow-sm">
           <CardContent className="p-6 sm:p-8">
             <motion.header

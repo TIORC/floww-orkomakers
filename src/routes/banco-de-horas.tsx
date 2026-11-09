@@ -8,7 +8,6 @@ import { EspelhoDiaADiaDialog } from "@/components/banco-de-horas/espelho-dia-a-
 import { ZonaDeArquivos } from "@/components/banco-de-horas/zona-de-arquivos";
 import { GradeEditavel, type ColunaGrade } from "@/components/banco-de-horas/grade-editavel";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import {
   abrirNovosPeriodos,
   atualizarEspelho,
@@ -548,7 +547,6 @@ function BancoDeHorasPage() {
         </div>
       </main>
       <EspelhoDiaADiaDialog espelho={espelhoAberto} aoFechar={() => setEspelhoAberto(null)} />
-      <PerfilFlutuante />
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   desligarColaborador,
   desativarColaborador,
   reativarColaborador,
+  reativarDesativado,
   LIMITE_MOTIVO_OUTROS,
   MOTIVOS_DESATIVACAO,
   MOTIVOS_DESLIGAMENTO,
@@ -361,6 +362,25 @@ export function DetalhesColaboradorDialog({
       fechar();
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível desativar.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  // Fim da desativação: a pessoa volta para Ativo.
+  async function reativarAfastado() {
+    if (!registro) return;
+    setSalvando(true);
+    try {
+      await reativarDesativado(registro["id"] as string);
+      await atualizarListas();
+      toast.success(`${registro["nome"]} foi reativado(a).`);
+      fechar();
+    } catch (erro) {
+      // Erros do Supabase não são instâncias de Error: a mensagem fica em `message`.
+      const texto = erro instanceof Error ? erro.message : (erro as { message?: string })?.message;
+      console.error("Falha ao reativar colaborador:", erro);
+      toast.error(texto ? `Não foi possível reativar: ${texto}` : "Não foi possível reativar.");
     } finally {
       setSalvando(false);
     }
@@ -827,6 +847,17 @@ export function DetalhesColaboradorDialog({
                       >
                         <PauseCircle className="size-4" aria-hidden />
                         Desativar
+                      </button>
+                    )}
+                    {desativado && (
+                      <button
+                        type="button"
+                        onClick={reativarAfastado}
+                        disabled={salvando}
+                        className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-green-500 disabled:opacity-60"
+                      >
+                        {salvando ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <UserCheck className="size-4" aria-hidden />}
+                        Reativar
                       </button>
                     )}
                     {desligado && (

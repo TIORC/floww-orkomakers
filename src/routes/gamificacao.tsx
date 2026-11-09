@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Coins, Search, UsersRound } from "lucide-react";
 
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import {
   COLABORADORES_POR_PAGINA,
   listarColaboradoresImportados,
@@ -124,7 +123,6 @@ function GamificacaoPage() {
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
       <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
-        <PerfilFlutuante />
         <section className="rounded-2xl border border-panel-active bg-panel p-6 sm:p-8">
           <header>
             <h1 className="font-display text-3xl font-semibold text-white">Ranking de Gamificação</h1>

@@ -71,6 +71,16 @@ export function podeProgramarFerias(usuario: UsuarioLogado | null | undefined) {
   );
 }
 
+// Cadastrar, alterar e remover feriados: RH (administradores) e conta master / Desenvolvedor do Sistema.
+export function podeGerenciarFeriados(usuario: UsuarioLogado | null | undefined) {
+  if (!usuario) return false;
+  return (
+    usuario.acessoMaster ||
+    usuario.nivelAcesso === "administrador" ||
+    usuario.nivelAcesso === "desenvolvedor"
+  );
+}
+
 // Aprovar ou recusar avisos da equipe: Gestores, Administradores e o Desenvolvedor do Sistema (demonstração).
 export function podeAprovarAvisos(usuario: UsuarioLogado | null | undefined) {
   if (!usuario) return false;

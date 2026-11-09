@@ -20,6 +20,7 @@ import { Route as ColaboradoresRouteImport } from './routes/colaboradores'
 import { Route as ComunicadosRouteImport } from './routes/comunicados'
 import { Route as DefinirSenhaRouteImport } from './routes/definir-senha'
 import { Route as FeedbacksRouteImport } from './routes/feedbacks'
+import { Route as FeriadosRouteImport } from './routes/feriados'
 import { Route as GamificacaoRouteImport } from './routes/gamificacao'
 import { Route as HorasExtrasFaltasRouteImport } from './routes/horas-extras-faltas'
 import { Route as LoginRouteImport } from './routes/login'
@@ -95,6 +96,11 @@ const DefinirSenhaRoute = DefinirSenhaRouteImport.update({
 const FeedbacksRoute = FeedbacksRouteImport.update({
   id: '/feedbacks',
   path: '/feedbacks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeriadosRoute = FeriadosRouteImport.update({
+  id: '/feriados',
+  path: '/feriados',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GamificacaoRoute = GamificacaoRouteImport.update({
@@ -217,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/comunicados': typeof ComunicadosRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/feedbacks': typeof FeedbacksRoute
+  '/feriados': typeof FeriadosRoute
   '/gamificacao': typeof GamificacaoRouteWithChildren
   '/horas-extras-faltas': typeof HorasExtrasFaltasRoute
   '/login': typeof LoginRoute
@@ -251,6 +258,7 @@ export interface FileRoutesByTo {
   '/comunicados': typeof ComunicadosRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/feedbacks': typeof FeedbacksRoute
+  '/feriados': typeof FeriadosRoute
   '/gamificacao': typeof GamificacaoRouteWithChildren
   '/horas-extras-faltas': typeof HorasExtrasFaltasRoute
   '/login': typeof LoginRoute
@@ -286,6 +294,7 @@ export interface FileRoutesById {
   '/comunicados': typeof ComunicadosRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/feedbacks': typeof FeedbacksRoute
+  '/feriados': typeof FeriadosRoute
   '/gamificacao': typeof GamificacaoRouteWithChildren
   '/horas-extras-faltas': typeof HorasExtrasFaltasRoute
   '/login': typeof LoginRoute
@@ -322,6 +331,7 @@ export interface FileRouteTypes {
     | '/comunicados'
     | '/definir-senha'
     | '/feedbacks'
+    | '/feriados'
     | '/gamificacao'
     | '/horas-extras-faltas'
     | '/login'
@@ -356,6 +366,7 @@ export interface FileRouteTypes {
     | '/comunicados'
     | '/definir-senha'
     | '/feedbacks'
+    | '/feriados'
     | '/gamificacao'
     | '/horas-extras-faltas'
     | '/login'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '/comunicados'
     | '/definir-senha'
     | '/feedbacks'
+    | '/feriados'
     | '/gamificacao'
     | '/horas-extras-faltas'
     | '/login'
@@ -425,6 +437,7 @@ export interface RootRouteChildren {
   ComunicadosRoute: typeof ComunicadosRoute
   DefinirSenhaRoute: typeof DefinirSenhaRoute
   FeedbacksRoute: typeof FeedbacksRoute
+  FeriadosRoute: typeof FeriadosRoute
   GamificacaoRoute: typeof GamificacaoRouteWithChildren
   HorasExtrasFaltasRoute: typeof HorasExtrasFaltasRoute
   LoginRoute: typeof LoginRoute
@@ -523,6 +536,13 @@ declare module '@tanstack/react-router' {
       path: '/feedbacks'
       fullPath: '/feedbacks'
       preLoaderRoute: typeof FeedbacksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feriados': {
+      id: '/feriados'
+      path: '/feriados'
+      fullPath: '/feriados'
+      preLoaderRoute: typeof FeriadosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gamificacao': {
@@ -712,6 +732,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComunicadosRoute: ComunicadosRoute,
   DefinirSenhaRoute: DefinirSenhaRoute,
   FeedbacksRoute: FeedbacksRoute,
+  FeriadosRoute: FeriadosRoute,
   GamificacaoRoute: GamificacaoRouteWithChildren,
   HorasExtrasFaltasRoute: HorasExtrasFaltasRoute,
   LoginRoute: LoginRoute,

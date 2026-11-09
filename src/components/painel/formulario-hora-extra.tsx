@@ -7,12 +7,41 @@ import { criarAviso } from "@/lib/avisos";
 import { listarSetores } from "@/lib/cargos";
 import { useUsuarioLogado } from "@/hooks/use-usuario-logado";
 
+// Termo exigido em toda solicitação de hora extra, independente do horário de liberação.
+const TEXTO_TERMO_RESPONSABILIDADE =
+  "Declaro estar ciente de que, ao permanecer nas dependências da empresa após o horário habitual de expediente, é de minha responsabilidade zelar pelas chaves da empresa, bem como assegurar que os aparelhos de ar-condicionado e os computadores estejam devidamente desligados ao término de minhas atividades.";
+
 const CAMPO =
   "h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-slate-900";
 const ROTULO = "grid gap-1.5 text-sm font-medium text-slate-900";
 const SECAO = "flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-900";
 
 // Formulário de Solicitação de Hora Extra, dentro do card. O nome vem do usuário logado.
+// Aceita "2", "2h", "2h30", "2:30", "2,5" ou "2.5" e devolve sempre "2h" ou "2h30". Nulo se não for um tempo válido.
+function normalizarHoras(texto: string): string | null {
+  const valor = texto.trim().toLowerCase().replace(",", ".");
+  if (!valor) return null;
+
+  const decimal = valor.match(/^(\d+)\.(\d+)$/);
+  if (decimal) {
+    const minutos = Math.round(Number(`0.${decimal[2]}`) * 60);
+    const horas = Number(decimal[1]) + Math.floor(minutos / 60);
+    return formatarHoras(horas, minutos % 60);
+  }
+
+  const inteiro = valor.match(/^(\d+)(?:[h:](\d{0,2}))?$/);
+  if (!inteiro) return null;
+  const horas = Number(inteiro[1]);
+  const minutos = inteiro[2] ? Number(inteiro[2]) : 0;
+  if (minutos > 59) return null;
+  return formatarHoras(horas, minutos, inteiro[2] !== undefined && inteiro[2] !== "");
+}
+
+function formatarHoras(horas: number, minutos: number, comMinutos = minutos > 0): string {
+  if (!comMinutos) return `${horas}h`;
+  return `${horas}h${String(minutos).padStart(2, "0")}`;
+}
+
 export function FormularioHoraExtra() {
   const { data: usuario } = useUsuarioLogado();
   const { data: setores = [] } = useQuery({ queryKey: ["setores"], queryFn: listarSetores });
@@ -26,11 +55,16 @@ export function FormularioHoraExtra() {
   const [horarioLiberacao, setHorarioLiberacao] = useState("");
   const [descricaoServico, setDescricaoServico] = useState("");
   const [motivo, setMotivo] = useState("");
+  const [termoAceito, setTermoAceito] = useState(false);
 
-  // Puxa o setor do usuário logado assim que ele carrega, sem sobrescrever uma escolha já feita.
+  // Puxa o setor e o e-mail do usuário logado assim que ele carrega, sem sobrescrever uma escolha já feita.
   useEffect(() => {
     if (usuario?.setor) setSetor((atual) => atual || usuario.setor);
   }, [usuario?.setor]);
+
+  useEffect(() => {
+    if (usuario?.email) setEmail((atual) => atual || usuario.email);
+  }, [usuario?.email]);
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -47,6 +81,15 @@ export function FormularioHoraExtra() {
       toast.error("Preencha os campos obrigatórios.");
       return;
     }
+    const horasFormatadas = normalizarHoras(horasPrevistas);
+    if (!horasFormatadas) {
+      toast.error("Informe as horas no formato 2h ou 2h30.");
+      return;
+    }
+    if (!termoAceito) {
+      toast.error("Marque o termo de responsabilidade para solicitar horas extras.");
+      return;
+    }
     try {
       await criarAviso({
         tipo: "hora_extra",
@@ -58,10 +101,11 @@ export function FormularioHoraExtra() {
           emailContato: email,
           dataInicial,
           dataFinal,
-          horasPrevistas,
+          horasPrevistas: horasFormatadas,
           horarioLiberacao,
           descricao: descricaoServico,
           motivo,
+          termoResponsabilidade: termoAceito ? "sim" : "não",
         },
       });
       await queryClient.invalidateQueries({ queryKey: ["avisos-minhas"] });
@@ -132,7 +176,11 @@ export function FormularioHoraExtra() {
           <input
             value={horasPrevistas}
             onChange={(evento) => setHorasPrevistas(evento.target.value)}
-            placeholder="Ex: 2h"
+            onBlur={() => {
+              const formatadas = normalizarHoras(horasPrevistas);
+              if (formatadas) setHorasPrevistas(formatadas);
+            }}
+            placeholder="Ex: 2h ou 2h30"
             className={CAMPO}
           />
         </label>
@@ -168,6 +216,17 @@ export function FormularioHoraExtra() {
             onChange={(evento) => setHorarioLiberacao(evento.target.value)}
             className={CAMPO}
           />
+        </label>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-900 md:col-span-2">
+          <input
+            type="checkbox"
+            checked={termoAceito}
+            onChange={(evento) => setTermoAceito(evento.target.checked)}
+            required
+            className="mt-1 size-4 shrink-0 accent-slate-900"
+          />
+          <span>{TEXTO_TERMO_RESPONSABILIDADE} *</span>
         </label>
 
         <label className={`${ROTULO} md:col-span-2`}>

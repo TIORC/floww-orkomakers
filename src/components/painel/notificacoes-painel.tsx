@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, UserRound } from "lucide-react";
+import { Bell, Check, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
+
+import { useNavigate } from "@tanstack/react-router";
 
 import { useUsuarioLogado } from "@/hooks/use-usuario-logado";
 import {
   contarNaoLidas,
   listarNotificacoes,
+  marcarComoLida,
   marcarTodasComoLidas,
   tempoRelativo,
 } from "@/lib/notificacoes";
@@ -18,6 +21,7 @@ const INTERVALO_ATUALIZACAO_MS = 60_000;
 
 export function NotificacoesPainel() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: usuario } = useUsuarioLogado();
   const email = usuario?.email ?? "";
   const [aberto, setAberto] = useState(false);
@@ -54,6 +58,20 @@ export function NotificacoesPainel() {
       await queryClient.invalidateQueries({ queryKey: ["notificacoes-nao-lidas"] });
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível marcar as notificações.");
+    }
+  }
+
+  // Clicar numa decisão de aviso marca a notificação como lida e abre Minhas Solicitações.
+  async function abrirNotificacao(id: string, jaLida: boolean) {
+    setAberto(false);
+    navigate({ to: "/horas-extras-faltas", search: { aba: "minhas" } });
+    if (jaLida) return;
+    try {
+      await marcarComoLida(id);
+      await queryClient.invalidateQueries({ queryKey: ["notificacoes"] });
+      await queryClient.invalidateQueries({ queryKey: ["notificacoes-nao-lidas"] });
+    } catch {
+      // Se não conseguir marcar como lida, a notificação continua aparecendo como não lida.
     }
   }
 
@@ -103,18 +121,35 @@ export function NotificacoesPainel() {
             ) : lista.length === 0 ? (
               <li className="px-4 py-8 text-center text-sm text-panel-label">Nenhuma notificação por enquanto.</li>
             ) : (
-              lista.map((notificacao) => (
+              lista.map((notificacao) => {
+                const levaParaSolicitacoes = notificacao.tipo === "aviso_permitido" || notificacao.tipo === "aviso_negado";
+                return (
                 <li
                   key={notificacao.id}
-                  className={cn("flex gap-3 px-4 py-3", notificacao.lida ? "bg-transparent" : "bg-brand/5")}
+                  onClick={levaParaSolicitacoes ? () => abrirNotificacao(notificacao.id, notificacao.lida) : undefined}
+                  className={cn(
+                    "flex gap-3 px-4 py-3",
+                    notificacao.lida ? "bg-transparent" : "bg-brand/5",
+                    levaParaSolicitacoes && "cursor-pointer hover:bg-panel-active/60",
+                  )}
                 >
-                  <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-panel-active text-panel-text">
-                    {notificacao.atorFotoUrl ? (
-                      <img src={notificacao.atorFotoUrl} alt="" className="size-full object-cover" />
-                    ) : (
-                      <UserRound className="size-5" aria-hidden />
-                    )}
-                  </span>
+                  {notificacao.tipo === "aviso_permitido" ? (
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-800 text-white" aria-label="Permitido">
+                      <Check className="size-5" aria-hidden />
+                    </span>
+                  ) : notificacao.tipo === "aviso_negado" ? (
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-red-900 text-white" aria-label="Negado">
+                      <X className="size-5" aria-hidden />
+                    </span>
+                  ) : (
+                    <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-panel-active text-panel-text">
+                      {notificacao.atorFotoUrl ? (
+                        <img src={notificacao.atorFotoUrl} alt="" className="size-full object-cover" />
+                      ) : (
+                        <UserRound className="size-5" aria-hidden />
+                      )}
+                    </span>
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-white">
                       {notificacao.atorNome && <strong className="font-bold">{notificacao.atorNome} </strong>}
@@ -124,7 +159,8 @@ export function NotificacoesPainel() {
                   </div>
                   {!notificacao.lida && <span className="mt-2 size-2 shrink-0 rounded-full bg-brand" aria-label="Não lida" />}
                 </li>
-              ))
+                );
+              })
             )}
           </ul>
         </div>

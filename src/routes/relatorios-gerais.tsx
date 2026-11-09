@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, SmilePlus } from "lucide-react";
 
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 import { resumoHumor, type EmocaoRelatorio, type PeriodoRelatorio } from "@/lib/checkin-sentimento";
 import type { SelecaoPeriodo } from "@/components/ferias/calendario-anual";
 import { CalendarioPeriodo } from "@/components/calendario-periodo";
@@ -33,7 +32,7 @@ const CAMPO =
   "h-10 w-56 rounded-lg border border-panel-active bg-background px-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-brand";
 
 // DEMONSTRAÇÃO: dados fictícios só para ver o visual. Troque por `false` (ou apague) para voltar aos dados reais.
-const MOSTRAR_DADOS_DEMONSTRATIVOS = true;
+const MOSTRAR_DADOS_DEMONSTRATIVOS = false;
 
 const DADOS_DEMONSTRATIVOS_FERIAS: LinhaRelatorioFerias[] = [
   {

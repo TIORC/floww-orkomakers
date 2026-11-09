@@ -13,8 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 export const LIMITE_MOTIVO = 12000;
 
 export const EMOCOES_SENTIMENTO = [
-  { id: "muito_triste", rotulo: "Muito triste", imagem: "/images/sentimento/Very_Sad.png" },
-  { id: "triste", rotulo: "Triste", imagem: "/images/sentimento/sad.png" },
+  { id: "muito_triste", rotulo: "Muito triste", imagem: "/images/sentimento/leao-muito-triste.webp" },
+  { id: "triste", rotulo: "Triste", imagem: "/images/sentimento/leao-triste.webp" },
   { id: "neutro", rotulo: "Neutro", imagem: "/images/sentimento/leao-neutro.webp" },
   { id: "feliz", rotulo: "Feliz", imagem: "/images/sentimento/leao-feliz.webp" },
   { id: "muito_feliz", rotulo: "Muito feliz", imagem: "/images/sentimento/leao-muito-feliz.webp" },

@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PerfilFlutuante } from "@/components/perfil-flutuante";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -160,6 +161,8 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       {!naRotaPublica && verificado && <PerfilFlutuante />}
       {naLogin || verificado ? <Outlet /> : <div className="min-h-screen bg-background" />}
+      {/* Mensagens de sucesso e erro (toast) em todas as telas. */}
+      <Toaster position="top-right" richColors closeButton />
     </QueryClientProvider>
   );
 }

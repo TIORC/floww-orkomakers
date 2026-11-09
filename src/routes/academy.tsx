@@ -3,7 +3,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CarrosselBanner, type SlideBanner } from "@/components/academy/carrossel-banner";
 import { ListaColaboradoresOnline } from "@/components/academy/lista-colaboradores-online";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
-import { PerfilFlutuante } from "@/components/perfil-flutuante";
 
 export const Route = createFileRoute("/academy")({
   head: () => ({
@@ -45,7 +44,6 @@ function AcademyDashboardPage() {
         </div>
         <ListaColaboradoresOnline />
       </main>
-      <PerfilFlutuante />
     </div>
   );
 }

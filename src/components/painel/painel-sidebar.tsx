@@ -98,7 +98,15 @@ const SECOES_DEPARTAMENTO_PESSOAL: Secao[] = [
     icone: CalendarDays,
     itens: [{ label: "Programação de Férias", icon: CalendarDays, to: "/programacao-ferias" }],
   },
+  {
+    titulo: "Feriados",
+    icone: CalendarOff,
+    itens: [{ label: "Feriados", icon: CalendarOff, to: "/feriados" }],
+  },
 ];
+
+// Telas do Departamento Pessoal que só aparecem para quem não é Visitante.
+const TITULOS_SO_COM_ACESSO = ["Programação de Férias", "Feriados"];
 
 const SECOES_ACADEMY: Secao[] = [
   {
@@ -288,7 +296,7 @@ export function PainelSidebar() {
         </p>
         <ul className="mt-3 grid gap-1.5">
           {SECOES_DEPARTAMENTO_PESSOAL.filter(
-            (secao) => secao.titulo !== "Programação de Férias" || podeVerProgramacaoFerias(usuario),
+            (secao) => !TITULOS_SO_COM_ACESSO.includes(secao.titulo) || podeVerProgramacaoFerias(usuario),
           ).map((secao) => (
             <MenuSecao key={secao.titulo} secao={secao} />
           ))}
