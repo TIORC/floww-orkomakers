@@ -22,6 +22,8 @@ import { formatarHorario, formatarTotal, rotuloDia } from "@/lib/espelho-ponto";
 type Props = {
   espelho: EspelhoSalvo | null;
   aoFechar: () => void;
+  // Só quem gerencia o banco de horas escreve o tratamento da falta; os demais veem o espelho só para leitura.
+  podeEditar: boolean;
 };
 
 const VAZIO = <span className="text-white/40">—</span>;
@@ -69,8 +71,12 @@ const COLUNAS: ColunaGrade<DiaSalvo>[] = [
 ];
 
 // Espelho de ponto de uma pessoa, dia a dia, aberto ao clicar no nome dela na planilha do banco de horas.
-export function EspelhoDiaADiaDialog({ espelho, aoFechar }: Props) {
+export function EspelhoDiaADiaDialog({ espelho, aoFechar, podeEditar }: Props) {
   const clienteConsultas = useQueryClient();
+  const colunas = useMemo(
+    () => COLUNAS.map((c) => (c.chave === "tratamento" ? { ...c, editavel: podeEditar } : c)),
+    [podeEditar],
+  );
   const chave = useMemo(() => ["banco-de-horas-dias", espelho?.id], [espelho?.id]);
   const consulta = useQuery({
     queryKey: chave,
@@ -136,7 +142,7 @@ export function EspelhoDiaADiaDialog({ espelho, aoFechar }: Props) {
 
         <GradeEditavel
           linhas={dias}
-          colunas={COLUNAS}
+          colunas={colunas}
           chaveLinha={(dia) => dia.id}
           aoEditar={editar}
           vazio={

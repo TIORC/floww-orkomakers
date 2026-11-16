@@ -1,8 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { ClipboardCheck, Eye, Plus, Sparkles, Target, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ClipboardCheck, Plus, Sparkles, Target, X } from "lucide-react";
 
+import { CartaoColaborador } from "@/components/ferias/cartao-colaborador";
+import { PerfilColaboradorDialog } from "@/components/perfil/perfil-colaborador-dialog";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
+import { podeProgramarFerias, useUsuarioLogado } from "@/hooks/use-usuario-logado";
+import { listarEquipeDireta, ordenarPorGraduacao } from "@/lib/colaboradores-diretorio";
+import { buscarPessoasOrganograma } from "@/lib/organograma-dados";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/planos-desenvolvimento")({
@@ -22,6 +28,33 @@ const OBJETIVOS: never[] = [];
 function PlanosDesenvolvimento() {
   const [aba, setAba] = useState<Aba>("Ativos");
   const [novidadeAberta, setNovidadeAberta] = useState(true);
+  // Perfil aberto pelo olho de um cartão da equipe (só leitura).
+  const [perfilAberto, setPerfilAberto] = useState<string | null>(null);
+  const { data: usuario, isPending: carregandoUsuario } = useUsuarioLogado();
+  const emailUsuario = usuario?.email ?? "";
+  // Mesma regra da Programação de Férias: quem gerencia vê a própria equipe; os demais, a do gestor direto.
+  // A equipe sempre inclui o próprio usuário, que aparece destacado.
+  const gestorDoUsuario = usuario?.gestorDiretoEmail || emailUsuario;
+  const emailGestor = podeProgramarFerias(usuario) ? emailUsuario : gestorDoUsuario;
+  const organograma = useQuery({
+    queryKey: ["organograma"],
+    queryFn: buscarPessoasOrganograma,
+    enabled: Boolean(emailGestor),
+  });
+  const equipeDireta = useQuery({
+    queryKey: ["equipe-direta", emailGestor],
+    queryFn: () => listarEquipeDireta(emailGestor),
+    enabled: Boolean(emailGestor),
+  });
+  const lider = organograma.data?.find(
+    (pessoa) => pessoa.email.trim().toLowerCase() === emailGestor.trim().toLowerCase(),
+  );
+  const equipe = useMemo(
+    () => ordenarPorGraduacao(equipeDireta.data ?? []).filter((pessoa) => pessoa.email !== lider?.email),
+    [equipeDireta.data, lider?.email],
+  );
+  const carregandoEquipe = carregandoUsuario || equipeDireta.isPending || organograma.isPending;
+  const erroEquipe = equipeDireta.isError || organograma.isError;
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -79,7 +112,7 @@ function PlanosDesenvolvimento() {
             </button>
           </div>
 
-          <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_26rem]">
             <div className="flex min-h-[26rem] flex-col items-center justify-center rounded-2xl bg-background p-8 text-center">
               {PLANOS.length === 0 ? (
                 <>
@@ -97,27 +130,53 @@ function PlanosDesenvolvimento() {
             <aside className="space-y-6">
               <div>
                 <h2 className="font-display text-lg font-semibold text-white">Minha equipe</h2>
-                <p className="text-xs text-white/70">Você</p>
-                <div className="mt-2 flex items-center gap-3 rounded-xl border border-panel-active bg-background p-3">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand font-display text-sm font-bold text-slate-900">
-                    TM
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-white">TI Maracas</p>
-                    <p className="text-xs text-white/70">TI</p>
+                {carregandoEquipe ? (
+                  <p className="mt-3 text-sm text-white/70">Carregando…</p>
+                ) : erroEquipe ? (
+                  <p className="mt-3 text-sm text-red-400">Não consegui carregar a equipe.</p>
+                ) : (
+                  <div className="mt-3 grid gap-6">
+                    {lider && (
+                      <div>
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/70">Líder</p>
+                        <CartaoColaborador
+                          lider
+                          voce={lider.email === emailUsuario}
+                          nome={lider.nome}
+                          cargo={lider.cargo}
+                          fotoUrl={lider.fotoUrl ?? ""}
+                          dataAdmissao={lider.dataAdmissao}
+                          aoVerPerfil={() => setPerfilAberto(lider.email)}
+                        />
+                      </div>
+                    )}
+                    {equipe.length > 0 && (
+                      <div>
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/70">Equipe</p>
+                        <ul className="grid gap-3">
+                          {equipe.map((pessoa) => (
+                            <li key={pessoa.id}>
+                              <CartaoColaborador
+                                voce={pessoa.email === emailUsuario}
+                                nome={pessoa.nome}
+                                cargo={pessoa.cargoVisivel}
+                                fotoUrl={pessoa.fotoUrl}
+                                dataAdmissao={pessoa.dataAdmissao}
+                                subLider={pessoa.subliderArea}
+                                aoVerPerfil={() => setPerfilAberto(pessoa.email)}
+                              />
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {!lider && equipe.length === 0 && (
+                      <p className="rounded-xl bg-background p-3 text-sm text-white">
+                        Nenhum colaborador ativo encontrado na sua equipe.
+                      </p>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    aria-label="Ver detalhes"
-                    className="rounded-md border border-panel-active p-1.5 text-white transition hover:bg-panel-active"
-                  >
-                    <Eye className="size-4" aria-hidden />
-                  </button>
-                </div>
-                <p className="mt-4 text-xs text-white/70">Equipe · mesmo setor</p>
-                <p className="mt-2 rounded-xl bg-background p-3 text-sm text-white">
-                  Nenhum outro colaborador do seu setor encontrado.
-                </p>
+                )}
               </div>
 
               <div>
@@ -137,6 +196,7 @@ function PlanosDesenvolvimento() {
           </div>
         </section>
       </main>
+      <PerfilColaboradorDialog email={perfilAberto} onFechar={() => setPerfilAberto(null)} />
     </div>
   );
 }

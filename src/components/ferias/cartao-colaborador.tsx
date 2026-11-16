@@ -1,4 +1,4 @@
-import { Crown, Users } from "lucide-react";
+import { Crown, Eye, Users } from "lucide-react";
 
 import { getIniciais } from "@/lib/iniciais";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,10 @@ type Props = {
   programado?: boolean;
   // O líder do setor aparece maior, com borda e selo em amarelo.
   lider?: boolean;
+  // Destaca o próprio usuário logado na equipe, com o selo "Você".
+  voce?: boolean;
+  // Com este handler, o cartão ganha um olho para abrir o perfil da pessoa.
+  aoVerPerfil?: () => void;
 };
 
 // Tempo de casa desde a admissão, ex.: "2 anos e 3 meses de casa".
@@ -56,6 +60,8 @@ export function CartaoColaborador({
   aoRemoverFerias,
   programado = false,
   lider = false,
+  voce = false,
+  aoVerPerfil,
 }: Props) {
   const tempoDeCasa = calcularTempoDeCasa(dataAdmissao);
   return (
@@ -65,6 +71,7 @@ export function CartaoColaborador({
         lider
           ? "border-brand p-5 shadow-lg shadow-brand/10 ring-1 ring-brand/40"
           : "border-panel-active p-4",
+        voce && !lider && "border-white/70 bg-panel-active/60 ring-1 ring-white/50",
       )}
     >
       <span
@@ -85,6 +92,11 @@ export function CartaoColaborador({
         </span>
       )}
       <div className="min-w-0">
+        {voce && (
+          <span className="mb-1 mr-1 inline-flex items-center rounded-full bg-white px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-slate-900">
+            Você
+          </span>
+        )}
         {lider && (
           <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-slate-900">
             <Crown className="size-3" aria-hidden />
@@ -122,6 +134,16 @@ export function CartaoColaborador({
           </div>
         )}
       </div>
+      {aoVerPerfil && (
+        <button
+          type="button"
+          aria-label={`Ver perfil de ${nome}`}
+          onClick={aoVerPerfil}
+          className="ml-auto shrink-0 self-start rounded-md border border-panel-active p-1.5 text-white transition hover:bg-panel-active"
+        >
+          <Eye className="size-4" aria-hidden />
+        </button>
+      )}
     </div>
   );
 }

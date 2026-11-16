@@ -128,6 +128,36 @@ export function separarLideres(colaboradores: ColaboradorDoSetor[]): {
   return { lideres, equipe: colaboradores.filter((c) => !ids.has(c.id)) };
 }
 
+// Hierarquia de acesso, do mais graduado para o menos graduado.
+const ORDEM_NIVEL: Record<string, number> = {
+  desenvolvedor: 0,
+  administrador: 1,
+  gestor: 2,
+  colaborador: 3,
+  convidado: 4,
+};
+
+// Data de admissão em AAAA-MM-DD para comparar. Sem data válida, a pessoa vai para o fim.
+function chaveDeAdmissao(dataAdmissao: string): string {
+  const texto = dataAdmissao.trim();
+  const brasil = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (brasil) return `${brasil[3]}-${brasil[2]}-${brasil[1]}`;
+  const iso = texto.match(/^\d{4}-\d{2}-\d{2}/);
+  return iso ? iso[0] : "9999-12-31";
+}
+
+// Ordem da equipe: mais graduado primeiro (nível de acesso); entre iguais, quem tem mais tempo de casa (admissão
+// mais antiga); por fim, o nome.
+export function ordenarPorGraduacao(colaboradores: ColaboradorDoSetor[]): ColaboradorDoSetor[] {
+  const nivel = (c: ColaboradorDoSetor) => ORDEM_NIVEL[c.nivelAcesso] ?? ORDEM_NIVEL["colaborador"] ?? 3;
+  return [...colaboradores].sort(
+    (a, b) =>
+      nivel(a) - nivel(b) ||
+      chaveDeAdmissao(a.dataAdmissao).localeCompare(chaveDeAdmissao(b.dataAdmissao)) ||
+      a.nome.localeCompare(b.nome, "pt-BR"),
+  );
+}
+
 // Todos os colaboradores ativos de um setor, em ordem de nome. Sem paginação: o setor inteiro aparece de uma vez.
 // `departamentos` são todas as grafias do setor (ex.: "TI" e "Departamento TI/Desenvolvimento").
 export async function listarColaboradoresDoSetor(departamentos: string[]): Promise<ColaboradorDoSetor[]> {

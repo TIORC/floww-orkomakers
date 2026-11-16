@@ -31,6 +31,7 @@ import {
 } from "@/lib/espelho-ponto";
 import { emParalelo } from "@/lib/em-paralelo";
 import { exportarBancoDeHoras, tituloDoMes } from "@/lib/exportar-banco-horas";
+import { podeGerenciarBancoDeHoras, useUsuarioLogado } from "@/hooks/use-usuario-logado";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/banco-de-horas")({
@@ -80,18 +81,22 @@ function corCompensacao(linha: LinhaGrade) {
 function colunaDeHoras(
   chave: "horasExtras" | "horasFaltas" | "trabalhado",
   titulo: string,
+  editavel: boolean,
 ): ColunaGrade<LinhaGrade> {
   return {
     chave,
     titulo,
-    editavel: true,
+    editavel,
     texto: (linha) => formatarHorario(linha[chave]),
     exibir: (linha) => formatarHorario(linha[chave]) || VAZIO,
   };
 }
 
-// As colunas seguem a planilha do banco de horas.
-function montarColunas(abrirEspelho: (linha: LinhaGrade) => void): ColunaGrade<LinhaGrade>[] {
+// As colunas seguem a planilha do banco de horas. Quem não gerencia o banco vê as células só para leitura.
+function montarColunas(
+  abrirEspelho: (linha: LinhaGrade) => void,
+  podeEditar: boolean,
+): ColunaGrade<LinhaGrade>[] {
   return [
     {
       chave: "funcionario",
@@ -119,7 +124,7 @@ function montarColunas(abrirEspelho: (linha: LinhaGrade) => void): ColunaGrade<L
     {
       chave: "saldoAnterior",
       titulo: "Saldo anterior",
-      editavel: true,
+      editavel: podeEditar,
       // Automático (banco de horas do mês anterior) até o RH digitar. Digita-se +15:40 ou -10:21 (sem sinal vale
       // positivo; o (-) da planilha também funciona). Apagar a célula volta para o automático.
       texto: (linha) => formatarHorarioComSinal(linha.saldoAnterior),
@@ -135,13 +140,13 @@ function montarColunas(abrirEspelho: (linha: LinhaGrade) => void): ColunaGrade<L
       },
       classe: (linha) => (linha.saldoManual === null ? "italic text-white/60" : undefined),
     },
-    colunaDeHoras("horasExtras", "Horas extras"),
-    colunaDeHoras("horasFaltas", "Horas faltas"),
-    colunaDeHoras("trabalhado", "Horas trabalhadas"),
+    colunaDeHoras("horasExtras", "Horas extras", podeEditar),
+    colunaDeHoras("horasFaltas", "Horas faltas", podeEditar),
+    colunaDeHoras("trabalhado", "Horas trabalhadas", podeEditar),
     {
       chave: "pagarDescontar",
       titulo: "Horas pagar / descontar",
-      editavel: true,
+      editavel: podeEditar,
       // Só existe saldo negativo aqui: digitar 1:03 já vale -1:03.
       texto: (linha) => formatarHorarioComSinal(linha.pagarDescontar),
       exibir: (linha) => formatarHorarioComSinal(linha.pagarDescontar) || VAZIO,
@@ -163,7 +168,7 @@ function montarColunas(abrirEspelho: (linha: LinhaGrade) => void): ColunaGrade<L
     {
       chave: "compensar",
       titulo: "Horas para compensar",
-      editavel: true,
+      editavel: podeEditar,
       // Digita-se +13:00 ou -13:00 (sem sinal vale positivo).
       texto: (linha) => formatarHorarioComSinal(linha.compensar),
       exibir: (linha) => formatarHorarioComSinal(linha.compensar) || VAZIO,
@@ -172,7 +177,7 @@ function montarColunas(abrirEspelho: (linha: LinhaGrade) => void): ColunaGrade<L
     {
       chave: "observacao",
       titulo: "Observações",
-      editavel: true,
+      editavel: podeEditar,
       texto: (linha) => linha.observacao,
       exibir: (linha) => linha.observacao || VAZIO,
     },
@@ -181,8 +186,11 @@ function montarColunas(abrirEspelho: (linha: LinhaGrade) => void): ColunaGrade<L
 
 function BancoDeHorasPage() {
   const clienteConsultas = useQueryClient();
+  const { data: usuario } = useUsuarioLogado();
+  // Administrador e Desenvolvedor do Sistema gerenciam o banco; os demais veem só as próprias horas, sem editar.
+  const gerencia = podeGerenciarBancoDeHoras(usuario);
   const [espelhoAberto, setEspelhoAberto] = useState<EspelhoSalvo | null>(null);
-  const colunas = useMemo(() => montarColunas(setEspelhoAberto), []);
+  const colunas = useMemo(() => montarColunas(setEspelhoAberto, gerencia), [gerencia]);
   const [arquivos, setArquivos] = useState<File[]>([]);
   const [importando, setImportando] = useState(false);
   const [exportando, setExportando] = useState(false);
@@ -197,7 +205,7 @@ function BancoDeHorasPage() {
   // Quando um período novo começa (21/10 para o ciclo 21/09 a 20/10), abre o período para todos, zerado.
   const periodosVerificados = useRef(false);
   useEffect(() => {
-    if (!consulta.data || periodosVerificados.current) return;
+    if (!gerencia || !consulta.data || periodosVerificados.current) return;
     periodosVerificados.current = true;
     const hoje = new Date().toLocaleDateString("sv-SE");
     abrirNovosPeriodos(consulta.data, hoje)
@@ -207,7 +215,7 @@ function BancoDeHorasPage() {
       .catch(() => {
         // Sem permissão de gravação (ou sem rede), a tela segue só com o que já existe.
       });
-  }, [consulta.data, clienteConsultas]);
+  }, [gerencia, consulta.data, clienteConsultas]);
 
   // Meses que têm espelho, do mais recente para o mais antigo. O padrão é o mais recente que já tem horas
   // importadas, para um mês recém-aberto (zerado) não aparecer antes de os PDFs chegarem.
@@ -392,32 +400,32 @@ function BancoDeHorasPage() {
         <header>
           <h1 className="font-display text-3xl font-semibold text-white">Banco de Horas</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/80">
-            Importe os espelhos de ponto em PDF, quantos quiser de uma vez, um por colaborador. O
-            espelho calcula as horas extras, faltas e trabalhadas; saldo anterior, horas a
-            pagar/descontar, horas para compensar e observações você digita na própria tabela, como
-            numa planilha. Tudo fica salvo. O saldo anterior é calculado sozinho (banco de horas do
-            mês anterior) e cada mês novo abre zerado; digite na célula só se precisar corrigir.
+            {gerencia
+              ? "Importe os espelhos de ponto em PDF, quantos quiser de uma vez, um por colaborador. O espelho calcula as horas extras, faltas e trabalhadas; saldo anterior, horas a pagar/descontar, horas para compensar e observações você digita na própria tabela, como numa planilha. Tudo fica salvo. O saldo anterior é calculado sozinho (banco de horas do mês anterior) e cada mês novo abre zerado; digite na célula só se precisar corrigir."
+              : "Aqui aparecem as suas horas do banco de horas: horas extras, faltas, trabalhadas e o saldo do mês. Clique no seu nome para ver o espelho de ponto dia a dia."}
           </p>
         </header>
 
-        <section className="mt-8 grid gap-4 rounded-2xl border border-panel-active bg-panel p-6">
-          <ZonaDeArquivos arquivos={arquivos} aoEscolher={setArquivos} desabilitado={importando} />
-          <div>
-            <button
-              type="button"
-              disabled={arquivos.length === 0 || importando}
-              onClick={importar}
-              className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-slate-900 shadow transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Upload className="size-4" aria-hidden />
-              {importando
-                ? progresso
-                  ? `Lendo ${progresso.lidos} de ${progresso.total}…`
-                  : "Salvando…"
-                : "Importar e salvar"}
-            </button>
-          </div>
-        </section>
+        {gerencia && (
+          <section className="mt-8 grid gap-4 rounded-2xl border border-panel-active bg-panel p-6">
+            <ZonaDeArquivos arquivos={arquivos} aoEscolher={setArquivos} desabilitado={importando} />
+            <div>
+              <button
+                type="button"
+                disabled={arquivos.length === 0 || importando}
+                onClick={importar}
+                className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-slate-900 shadow transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Upload className="size-4" aria-hidden />
+                {importando
+                  ? progresso
+                    ? `Lendo ${progresso.lidos} de ${progresso.total}…`
+                    : "Salvando…"
+                  : "Importar e salvar"}
+              </button>
+            </div>
+          </section>
+        )}
 
         <div className="mt-6 flex flex-wrap items-end gap-4">
           <div className="grid gap-2">
@@ -439,32 +447,34 @@ function BancoDeHorasPage() {
               ))}
             </select>
           </div>
-          <div className="grid gap-2">
-            <label htmlFor="filtro-colaborador" className="text-sm font-semibold text-white">
-              Colaborador
-            </label>
-            <select
-              id="filtro-colaborador"
-              value={colaborador}
-              disabled={colaboradores.length === 0}
-              onChange={(evento) => setColaboradorEscolhido(evento.target.value)}
-              className={cn(CAMPO, "min-w-[18rem]")}
-            >
-              <option value={TODOS}>Todos os colaboradores</option>
-              {colaboradores.map((nome) => (
-                <option key={nome} value={nome}>
-                  {nome}
-                </option>
-              ))}
-            </select>
-          </div>
-          {espelhosFiltrados.length > 0 && (
+          {gerencia && (
+            <div className="grid gap-2">
+              <label htmlFor="filtro-colaborador" className="text-sm font-semibold text-white">
+                Colaborador
+              </label>
+              <select
+                id="filtro-colaborador"
+                value={colaborador}
+                disabled={colaboradores.length === 0}
+                onChange={(evento) => setColaboradorEscolhido(evento.target.value)}
+                className={cn(CAMPO, "min-w-[18rem]")}
+              >
+                <option value={TODOS}>Todos os colaboradores</option>
+                {colaboradores.map((nome) => (
+                  <option key={nome} value={nome}>
+                    {nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {gerencia && espelhosFiltrados.length > 0 && (
             <p className="pb-2.5 text-sm text-white/70">
               {espelhosFiltrados.length}{" "}
               {espelhosFiltrados.length === 1 ? "colaborador" : "colaboradores"}
             </p>
           )}
-          {espelhoUnico && (
+          {gerencia && espelhoUnico && (
             <button
               type="button"
               onClick={() => excluir(espelhoUnico)}
@@ -513,7 +523,9 @@ function BancoDeHorasPage() {
                 ? "Carregando…"
                 : consulta.isError
                   ? "Não consegui carregar o banco de horas. Verifique se você tem acesso de Administrador."
-                  : "Nenhum espelho importado ainda. Importe os PDFs para ver o cálculo."
+                  : gerencia
+                    ? "Nenhum espelho importado ainda. Importe os PDFs para ver o cálculo."
+                    : "Ainda não há horas do banco de horas registradas para você."
             }
             rodape={
               <tr className="font-semibold text-white">
@@ -536,7 +548,7 @@ function BancoDeHorasPage() {
               </tr>
             }
           />
-          {linhas.length > 0 && (
+          {gerencia && linhas.length > 0 && (
             <p className="mt-3 text-xs text-white/60">
               Setas e Tab movem a seleção · Enter ou duplo clique edita · digitar sobrescreve ·
               Delete limpa · Esc cancela · Ctrl+C / Ctrl+V copiam e colam (também do Excel). As
@@ -546,7 +558,11 @@ function BancoDeHorasPage() {
           )}
         </div>
       </main>
-      <EspelhoDiaADiaDialog espelho={espelhoAberto} aoFechar={() => setEspelhoAberto(null)} />
+      <EspelhoDiaADiaDialog
+        espelho={espelhoAberto}
+        aoFechar={() => setEspelhoAberto(null)}
+        podeEditar={gerencia}
+      />
     </div>
   );
 }

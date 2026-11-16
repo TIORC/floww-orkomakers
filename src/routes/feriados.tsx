@@ -7,6 +7,7 @@ import { IconeFeriado } from "@/components/feriados/icone-feriado";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
 import {
   podeGerenciarFeriados,
+  podeVerFeriadosCadastrados,
   podeVerProgramacaoFerias,
   useUsuarioLogado,
 } from "@/hooks/use-usuario-logado";
@@ -60,6 +61,7 @@ function FeriadosPage() {
   const { feriados, isPending: carregandoFeriados } = useFeriadosCadastrados();
   const acesso = podeVerProgramacaoFerias(usuario);
   const podeGerenciar = podeGerenciarFeriados(usuario);
+  const podeVerCadastrados = podeVerFeriadosCadastrados(usuario);
   const hoje = hojeIso();
   const [ano, setAno] = useState(() => Number(hoje.slice(0, 4)));
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -260,6 +262,7 @@ function FeriadosPage() {
           </section>
         )}
 
+        {podeVerCadastrados && (
         <section aria-label="Feriados cadastrados" className="mt-8">
           <h2 className="font-display text-xl font-semibold text-white">Cadastrados</h2>
           {carregandoFeriados ? (
@@ -320,6 +323,7 @@ function FeriadosPage() {
             </div>
           )}
         </section>
+        )}
 
         <section aria-label="Próximo feriado" className="mt-8">
           <div className="flex flex-wrap items-end gap-4">

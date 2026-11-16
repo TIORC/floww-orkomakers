@@ -15,34 +15,65 @@ let emailAtual = "";
 let online: ReadonlySet<string> = VAZIO;
 const ouvintes = new Set<() => void>();
 
+// O Supabase devolve o mesmo canal enquanto o nome dele ainda estiver aberto, e não aceita novos "presence"
+// depois do subscribe. Por isso cada troca de canal espera o anterior sair por completo, nesta fila.
+let fila: Promise<void> = Promise.resolve();
+
 function avisar() {
   for (const ouvinte of ouvintes) ouvinte();
 }
 
-export function sairDaPresenca() {
-  if (canal) void supabase.removeChannel(canal);
+function enfileirar(tarefa: () => Promise<void>) {
+  fila = fila.then(tarefa).catch(() => {});
+}
+
+async function fecharCanal(): Promise<void> {
+  const antigo = canal;
   canal = null;
+  if (!antigo) return;
+  try {
+    await supabase.removeChannel(antigo);
+  } catch {
+    // Se não fechar, a próxima entrada tenta de novo sem quebrar a tela.
+  }
+}
+
+export function sairDaPresenca() {
   emailAtual = "";
   online = VAZIO;
   avisar();
+  enfileirar(fecharCanal);
 }
 
 // Entra no canal como esta pessoa. Chamar de novo com o mesmo e-mail não faz nada.
 export function entrarNaPresenca(email: string) {
   const chave = email.trim().toLowerCase();
   if (!chave || chave === emailAtual) return;
-  sairDaPresenca();
   emailAtual = chave;
+  online = VAZIO;
+  avisar();
 
-  const novo = supabase.channel(NOME_DO_CANAL, { config: { presence: { key: chave } } });
-  novo.on("presence", { event: "sync" }, () => {
-    online = new Set(Object.keys(novo.presenceState()));
-    avisar();
+  enfileirar(async () => {
+    await fecharCanal();
+    // Se outra pessoa entrou enquanto este pedido esperava na fila, ele já não vale.
+    if (emailAtual !== chave) return;
+
+    const novo = supabase.channel(NOME_DO_CANAL, { config: { presence: { key: chave } } });
+    canal = novo;
+    try {
+      novo.on("presence", { event: "sync" }, () => {
+        if (canal !== novo) return;
+        online = new Set(Object.keys(novo.presenceState()));
+        avisar();
+      });
+      novo.subscribe((status) => {
+        if (status === "SUBSCRIBED") void novo.track({ desde: new Date().toISOString() });
+      });
+    } catch (erro) {
+      // Nunca deixa a presença derrubar a barra lateral; a lista só fica sem os online.
+      console.error("Não consegui entrar no canal de presença:", erro);
+    }
   });
-  novo.subscribe((status) => {
-    if (status === "SUBSCRIBED") void novo.track({ desde: new Date().toISOString() });
-  });
-  canal = novo;
 }
 
 function assinar(ouvinte: () => void) {

@@ -71,6 +71,18 @@ export function podeProgramarFerias(usuario: UsuarioLogado | null | undefined) {
   );
 }
 
+// Ver a lista de feriados cadastrados (manual): Gestores, Administradores, Desenvolvedor do Sistema e conta master.
+// Colaboradores e Visitantes não veem essa lista.
+export function podeVerFeriadosCadastrados(usuario: UsuarioLogado | null | undefined) {
+  if (!usuario) return false;
+  return (
+    usuario.acessoMaster ||
+    usuario.nivelAcesso === "gestor" ||
+    usuario.nivelAcesso === "administrador" ||
+    usuario.nivelAcesso === "desenvolvedor"
+  );
+}
+
 // Cadastrar, alterar e remover feriados: RH (administradores) e conta master / Desenvolvedor do Sistema.
 export function podeGerenciarFeriados(usuario: UsuarioLogado | null | undefined) {
   if (!usuario) return false;
@@ -79,6 +91,13 @@ export function podeGerenciarFeriados(usuario: UsuarioLogado | null | undefined)
     usuario.nivelAcesso === "administrador" ||
     usuario.nivelAcesso === "desenvolvedor"
   );
+}
+
+// Banco de Horas: editar e importar espelhos, e ver as horas de todos. Mesma regra da função pode_gerir_banco_de_horas
+// no banco. Os demais (gestores, colaboradores) veem só as próprias horas, somente leitura.
+export function podeGerenciarBancoDeHoras(usuario: UsuarioLogado | null | undefined) {
+  if (!usuario) return false;
+  return usuario.nivelAcesso === "administrador" || usuario.nivelAcesso === "desenvolvedor";
 }
 
 // Carregar mídias (banners) na Academy: só o Desenvolvedor do Sistema (conta TI Maracas).
