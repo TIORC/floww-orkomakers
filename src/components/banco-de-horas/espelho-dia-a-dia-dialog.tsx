@@ -18,17 +18,26 @@ import {
   type EspelhoSalvo,
 } from "@/lib/banco-horas";
 import { formatarHorario, formatarTotal, rotuloDia } from "@/lib/espelho-ponto";
+import type { DiaRegistrado } from "@/lib/historico-pontos";
 
 type Props = {
   espelho: EspelhoSalvo | null;
   aoFechar: () => void;
   // Só quem gerencia o banco de horas escreve o tratamento da falta; os demais veem o espelho só para leitura.
   podeEditar: boolean;
+  // Dias do bater ponto que o PDF não cobre. Entram na tabela quando caem no período do espelho.
+  diasSemPdf: DiaRegistrado[];
 };
 
 const VAZIO = <span className="text-white/40">—</span>;
 
 const horarioOuVazio = (minutos: number) => (minutos > 0 ? formatarHorario(minutos) : VAZIO);
+
+// Saldo com sinal: "+01:30" quando sobrou, "-00:52" quando faltou, "00:00" quando bateu a jornada.
+function saldoComSinal(minutos: number) {
+  if (minutos === 0) return "00:00";
+  return `${minutos > 0 ? "+" : "-"}${formatarHorario(Math.abs(minutos))}`;
+}
 
 const COLUNAS: ColunaGrade<DiaSalvo>[] = [
   { chave: "data", titulo: "Data", editavel: false, texto: (dia) => rotuloDia(dia) },
@@ -56,10 +65,21 @@ const COLUNAS: ColunaGrade<DiaSalvo>[] = [
   },
   {
     chave: "trabalhado",
-    titulo: "Saldo do dia",
+    titulo: "Trabalhado",
     editavel: false,
     texto: (dia) => (dia.trabalhado > 0 ? formatarHorario(dia.trabalhado) : ""),
     exibir: (dia) => horarioOuVazio(dia.trabalhado),
+  },
+  {
+    chave: "saldo",
+    titulo: "Saldo do dia",
+    editavel: false,
+    texto: (dia) => saldoComSinal(dia.horasExtras - dia.horasFaltas),
+    exibir: (dia) => {
+      const saldo = dia.horasExtras - dia.horasFaltas;
+      const cor = saldo > 0 ? "text-emerald-400" : saldo < 0 ? "text-red-400" : "text-white/60";
+      return <span className={`font-semibold tabular-nums ${cor}`}>{saldoComSinal(saldo)}</span>;
+    },
   },
   {
     chave: "observacao",
@@ -71,7 +91,7 @@ const COLUNAS: ColunaGrade<DiaSalvo>[] = [
 ];
 
 // Espelho de ponto de uma pessoa, dia a dia, aberto ao clicar no nome dela na planilha do banco de horas.
-export function EspelhoDiaADiaDialog({ espelho, aoFechar, podeEditar }: Props) {
+export function EspelhoDiaADiaDialog({ espelho, aoFechar, podeEditar, diasSemPdf }: Props) {
   const clienteConsultas = useQueryClient();
   const colunas = useMemo(
     () => COLUNAS.map((c) => (c.chave === "tratamento" ? { ...c, editavel: podeEditar } : c)),
@@ -83,7 +103,34 @@ export function EspelhoDiaADiaDialog({ espelho, aoFechar, podeEditar }: Props) {
     queryFn: () => carregarDias(espelho?.id ?? ""),
     enabled: !!espelho,
   });
-  const dias = useMemo(() => consulta.data ?? [], [consulta.data]);
+  const diasDoPdf = useMemo(() => consulta.data ?? [], [consulta.data]);
+
+  // Dias do bater ponto dentro do período deste espelho, sem sobrepor os dias que o PDF já traz.
+  const diasDoBatida = useMemo<DiaSalvo[]>(() => {
+    if (!espelho) return [];
+    const doPdf = new Set(diasDoPdf.map((d) => d.dataIso));
+    return diasSemPdf
+      .filter(
+        (d) =>
+          d.data >= espelho.periodoInicio && d.data <= espelho.periodoFim && !doPdf.has(d.data),
+      )
+      .map((d) => ({
+        id: `batida-${d.data}`,
+        dataIso: d.data,
+        data: `${d.data.slice(8, 10)}/${d.data.slice(5, 7)}`,
+        diaSemana: d.diaSemana,
+        trabalhado: d.trabalhado,
+        horasExtras: d.horasExtras,
+        horasFaltas: d.horasFaltas,
+        tratamento: "",
+        observacao: d.observacao,
+      }));
+  }, [espelho, diasDoPdf, diasSemPdf]);
+
+  const dias = useMemo(
+    () => [...diasDoPdf, ...diasDoBatida].sort((a, b) => a.dataIso.localeCompare(b.dataIso)),
+    [diasDoPdf, diasDoBatida],
+  );
 
   const totais = useMemo(
     () => ({
@@ -94,8 +141,11 @@ export function EspelhoDiaADiaDialog({ espelho, aoFechar, podeEditar }: Props) {
     [dias],
   );
 
-  // O RH só escreve o tratamento da falta; o resto vem do PDF.
+  // O RH só escreve o tratamento da falta dos dias do PDF; os dias do bater ponto não são guardados nessa tabela.
   function editar(dia: DiaSalvo, _chave: string, valor: string): string | null {
+    if (dia.id.startsWith("batida-")) {
+      return "Este dia vem do bater ponto e não tem tratamento de falta.";
+    }
     clienteConsultas.setQueryData<DiaSalvo[]>(chave, (atuais) =>
       atuais?.map((d) => (d.id === dia.id ? { ...d, tratamento: valor } : d)),
     );

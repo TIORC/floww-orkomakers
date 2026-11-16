@@ -325,6 +325,8 @@ export async function salvarEspelhos(espelhos: EspelhoPonto[]) {
 // Um dia do espelho de ponto, como no PDF. Horários em minutos.
 export type DiaSalvo = {
   id: string;
+  // "2026-09-21", para ordenar os dias do PDF junto com os do bater ponto.
+  dataIso: string;
   // "21/09"
   data: string;
   diaSemana: string;
@@ -358,6 +360,7 @@ export async function carregarDias(espelhoId: string): Promise<DiaSalvo[]> {
   if (error) throw error;
   return ((data ?? []) as LinhaDia[]).map((d) => ({
     id: d.id,
+    dataIso: String(d.data).slice(0, 10),
     data: `${d.data.slice(8, 10)}/${d.data.slice(5, 7)}`,
     diaSemana: d.dia_semana,
     trabalhado: d.trabalhado_min,

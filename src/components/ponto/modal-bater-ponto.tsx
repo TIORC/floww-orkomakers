@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, Clock, History, Loader2, MapPinOff, ScanFace, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -9,18 +10,32 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { HistoricoPontos } from "@/components/ponto/historico-pontos";
 import { MapaLocalizacao, type Localizacao } from "@/components/ponto/mapa-localizacao";
+import { useUsuarioLogado } from "@/hooks/use-usuario-logado";
+import { carregarDiasDoColaborador, linhasDoMes } from "@/lib/historico-pontos";
+import {
+  agruparBatidasPorDia,
+  BATIDAS_POR_DIA,
+  carregarMinhasBatidas,
+  registrarBatida,
+  rotuloDaBatida,
+  ultimaBatida,
+  type LocalizacaoDaBatida,
+} from "@/lib/ponto-batidas";
+import {
+  carregarEspelhosDoColaborador,
+  formatarDuracao,
+  resumoDoMes,
+} from "@/lib/resumo-do-mes";
 
 type Props = {
   aberto: boolean;
   aoMudarAberto: (aberto: boolean) => void;
 };
 
-// Mensagem enquanto o registro de ponto não está ligado ao banco de dados.
-const AVISO_SEM_BANCO = "O registro de ponto ainda não está conectado ao sistema.";
-
-// Etapas do fluxo: início → localizando → validada (com botão de confirmar) ou erro.
-type Etapa = "inicio" | "localizando" | "validada" | "erro";
+// Etapas do fluxo: início → localizando → validada (com botão de confirmar) ou erro. "historico" é a tela de pontos.
+type Etapa = "inicio" | "localizando" | "validada" | "erro" | "historico";
 
 function dataExtensa(data: Date) {
   return data.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
@@ -60,6 +75,57 @@ export function ModalBaterPonto({ aberto, aoMudarAberto }: Props) {
   const [registro, setRegistro] = useState<Date | null>(null);
   const [localizacao, setLocalizacao] = useState<Localizacao | null>(null);
 
+  const clienteConsultas = useQueryClient();
+  const { data: usuario } = useUsuarioLogado();
+  const email = usuario?.email ?? "";
+  const nome = usuario?.nomeCompleto || usuario?.nome || "";
+  const batidas = useQuery({
+    queryKey: ["ponto-batidas", email],
+    queryFn: () => carregarMinhasBatidas(email),
+    enabled: !!email,
+  });
+  const ultima = ultimaBatida(batidas.data ?? []);
+
+  // As 4 batidas do dia, na ordem: a próxima é a que está sendo registrada agora.
+  const hojeIso = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+  const batidasHoje = agruparBatidasPorDia(batidas.data ?? []).get(hojeIso) ?? [];
+  const proximaBatida =
+    batidasHoje.length < BATIDAS_POR_DIA ? rotuloDaBatida(batidasHoje.length) : null;
+
+  // Números do cartão de resumo: mês atual, com os dias e espelhos da própria pessoa (mesmas chaves da tela de histórico).
+  const nomes = [usuario?.nome ?? "", usuario?.nomeCompleto ?? ""];
+  const dias = useQuery({
+    queryKey: ["ponto-historico-dias", email],
+    queryFn: () => carregarDiasDoColaborador(nomes),
+    enabled: !!email,
+  });
+  const espelhos = useQuery({
+    queryKey: ["ponto-historico-espelhos", email],
+    queryFn: () => carregarEspelhosDoColaborador(nomes),
+    enabled: !!email,
+  });
+  const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
+  const resumo = useMemo(
+    () =>
+      resumoDoMes(
+        linhasDoMes(dias.data ?? [], [], mesAtual, batidas.data ?? []),
+        espelhos.data ?? [],
+        mesAtual,
+      ),
+    [dias.data, espelhos.data, batidas.data, mesAtual],
+  );
+
+  const confirmar = useMutation({
+    mutationFn: ({ local }: { local: LocalizacaoDaBatida; rotulo: string }) =>
+      registrarBatida(email, nome, local),
+    onSuccess: (_, { rotulo }) => {
+      toast.success(`${rotulo} registrada.`);
+      void clienteConsultas.invalidateQueries({ queryKey: ["ponto-batidas"] });
+      setEtapa("inicio");
+    },
+    onError: () => toast.error("Não consegui registrar o ponto. Tente de novo."),
+  });
+
   // Relógio da tela atualiza a cada 30 segundos, enquanto o modal estiver aberto.
   useEffect(() => {
     if (!aberto) {
@@ -95,7 +161,14 @@ export function ModalBaterPonto({ aberto, aoMudarAberto }: Props) {
 
   return (
     <Dialog open={aberto} onOpenChange={aoMudarAberto}>
-      <DialogContent className="max-w-6xl overflow-hidden rounded-2xl border border-brand bg-panel p-0 text-white shadow-2xl shadow-brand/10">
+      <DialogContent
+        className={cn(
+          "overflow-hidden rounded-2xl border border-brand bg-panel p-0 text-white shadow-2xl shadow-brand/10",
+          etapa === "historico"
+            ? "w-[96vw] max-w-[96vw] xl:max-w-[1500px]"
+            : "max-w-6xl",
+        )}
+      >
         <DialogTitle className="sr-only">Registre o seu ponto</DialogTitle>
         <DialogDescription className="sr-only">Bata o ponto e veja seus registros do mês.</DialogDescription>
 
@@ -113,42 +186,65 @@ export function ModalBaterPonto({ aberto, aoMudarAberto }: Props) {
               </div>
               <div className="min-w-56 rounded-xl bg-panel-active/60 px-6 py-4 text-center">
                 <p className="text-sm text-white/60">Última batida</p>
-                <p className="mt-1 text-lg font-semibold text-white">{SEM_DADO}</p>
+                <p className="mt-1 text-lg font-semibold text-white">
+                  {ultima ? horaDoRegistro(new Date(ultima.registradoEm)) : SEM_DADO}
+                </p>
+                {ultima && (
+                  <p className="text-xs text-white/60">{dataDoRegistro(new Date(ultima.registradoEm))}</p>
+                )}
               </div>
             </div>
 
             <div className="px-8">
               <button
                 type="button"
+                disabled={!proximaBatida}
                 onClick={baterPonto}
                 className="w-full rounded-xl bg-brand py-4 text-lg font-bold text-slate-900 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 Bater ponto
               </button>
+              <p className="mt-3 text-center text-sm text-white/70">
+                {proximaBatida
+                  ? `Hoje: ${batidasHoje.length} de ${BATIDAS_POR_DIA} batidas · Próxima: ${proximaBatida}`
+                  : "As 4 batidas de hoje já foram registradas."}
+              </p>
             </div>
 
             <div className="mt-8 grid grid-cols-3 divide-x divide-panel-active border-y border-panel-active">
-              <Estatistica rotulo="Dias trabalhados" valor={SEM_DADO} />
-              <Estatistica rotulo="Horas no mês" valor={SEM_DADO} destaque />
-              <Estatistica rotulo="Banco de horas" valor={SEM_DADO} />
+              <Estatistica
+                rotulo="Dias trabalhados"
+                valor={dias.data && batidas.data ? String(resumo.diasTrabalhados) : SEM_DADO}
+              />
+              <Estatistica
+                rotulo="Horas no mês"
+                valor={dias.data && batidas.data ? formatarDuracao(resumo.horasNoMes) : SEM_DADO}
+                destaque
+              />
+              <Estatistica
+                rotulo="Banco de horas"
+                valor={
+                  espelhos.data && resumo.bancoDeHoras !== null
+                    ? formatarDuracao(resumo.bancoDeHoras)
+                    : SEM_DADO
+                }
+              />
             </div>
 
             <div className="p-8">
               <button
                 type="button"
-                onClick={() => toast.info(AVISO_SEM_BANCO)}
+                onClick={() => setEtapa("historico")}
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-brand py-3 text-base font-semibold text-brand transition hover:bg-brand/10"
               >
                 <History className="size-5" aria-hidden />
                 Ver histórico de pontos
               </button>
-              <p className="mt-4 flex items-center justify-center gap-2 text-xs text-white/60">
-                <Clock className="size-3.5" aria-hidden />
-                Os valores aparecem aqui quando o registro de ponto estiver ligado ao sistema.
-              </p>
             </div>
           </>
         )}
+
+        {etapa === "historico" && <HistoricoPontos aoVoltar={() => setEtapa("inicio")} />}
 
         {etapa === "localizando" && (
           <div className="flex flex-col items-center gap-4 p-10 text-center" role="status">
@@ -163,6 +259,13 @@ export function ModalBaterPonto({ aberto, aoMudarAberto }: Props) {
             <div className="flex flex-col items-center gap-3">
               <ShieldCheck className="size-12 text-brand" aria-hidden />
               <h2 className="text-xl font-bold text-white">Localização validada com sucesso!</h2>
+              {proximaBatida ? (
+                <p className="text-sm text-white/70">
+                  Esta batida é: <span className="font-semibold text-white">{proximaBatida}</span>
+                </p>
+              ) : (
+                <p className="text-sm text-white/70">As 4 batidas de hoje já foram registradas.</p>
+              )}
             </div>
 
             <MapaLocalizacao localizacao={localizacao} />
@@ -186,10 +289,15 @@ export function ModalBaterPonto({ aberto, aoMudarAberto }: Props) {
 
             <button
               type="button"
-              onClick={() => toast.info(AVISO_SEM_BANCO)}
-              className="w-full rounded-xl bg-brand py-3 text-base font-bold uppercase tracking-wide text-slate-900 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              disabled={!email || !proximaBatida || confirmar.isPending}
+              onClick={() =>
+                localizacao &&
+                proximaBatida &&
+                confirmar.mutate({ local: localizacao, rotulo: proximaBatida })
+              }
+              className="w-full rounded-xl bg-brand py-3 text-base font-bold uppercase tracking-wide text-slate-900 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Confirmar ponto
+              {confirmar.isPending ? "Registrando…" : "Confirmar ponto"}
             </button>
             <button
               type="button"

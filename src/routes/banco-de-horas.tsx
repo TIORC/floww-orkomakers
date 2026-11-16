@@ -30,6 +30,9 @@ import {
   textoParaMinutosNegativo,
 } from "@/lib/espelho-ponto";
 import { emParalelo } from "@/lib/em-paralelo";
+import { carregarDiasDoColaborador } from "@/lib/historico-pontos";
+import { carregarMinhasBatidas } from "@/lib/ponto-batidas";
+import { aplicarBatidasNoBanco, diasDeBatidasCompletas } from "@/lib/saldo-do-dia";
 import { exportarBancoDeHoras, tituloDoMes } from "@/lib/exportar-banco-horas";
 import { podeGerenciarBancoDeHoras, useUsuarioLogado } from "@/hooks/use-usuario-logado";
 import { cn } from "@/lib/utils";
@@ -199,8 +202,35 @@ function BancoDeHorasPage() {
   const [colaboradorEscolhido, setColaboradorEscolhido] = useState(TODOS);
 
   const consulta = useQuery({ queryKey: CHAVE_CONSULTA, queryFn: carregarEspelhos });
+
+  // Bater ponto: as batidas completas da própria pessoa que o PDF ainda não cobre entram no banco dela.
+  const emailUsuario = usuario?.email ?? "";
+  const nomesUsuario = useMemo(
+    () => [usuario?.nome ?? "", usuario?.nomeCompleto ?? ""],
+    [usuario?.nome, usuario?.nomeCompleto],
+  );
+  const batidasUsuario = useQuery({
+    queryKey: ["ponto-batidas", emailUsuario],
+    queryFn: () => carregarMinhasBatidas(emailUsuario),
+    enabled: !!emailUsuario,
+  });
+  const diasPdfUsuario = useQuery({
+    queryKey: ["ponto-historico-dias", emailUsuario],
+    queryFn: () => carregarDiasDoColaborador(nomesUsuario),
+    enabled: !!emailUsuario,
+  });
+  const diasSemPdf = useMemo(() => {
+    // Sem os dias do PDF ainda, não dá para saber o que é duplicado: nada entra até carregar.
+    if (!diasPdfUsuario.data) return [];
+    const doPdf = new Set(diasPdfUsuario.data.map((d) => d.data));
+    return diasDeBatidasCompletas(batidasUsuario.data ?? []).filter((d) => !doPdf.has(d.data));
+  }, [batidasUsuario.data, diasPdfUsuario.data]);
+
   // Saldo anterior de cada mês = banco de horas do mês anterior, a menos que o RH tenha digitado outro valor.
-  const espelhos = useMemo(() => encadearSaldos(consulta.data ?? []), [consulta.data]);
+  const espelhos = useMemo(
+    () => encadearSaldos(aplicarBatidasNoBanco(consulta.data ?? [], nomesUsuario, diasSemPdf)),
+    [consulta.data, nomesUsuario, diasSemPdf],
+  );
 
   // Quando um período novo começa (21/10 para o ciclo 21/09 a 20/10), abre o período para todos, zerado.
   const periodosVerificados = useRef(false);
@@ -562,6 +592,7 @@ function BancoDeHorasPage() {
         espelho={espelhoAberto}
         aoFechar={() => setEspelhoAberto(null)}
         podeEditar={gerencia}
+        diasSemPdf={diasSemPdf}
       />
     </div>
   );
