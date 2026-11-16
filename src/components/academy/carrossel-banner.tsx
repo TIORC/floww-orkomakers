@@ -17,11 +17,18 @@ type Props = {
   // Tempo entre os slides, em milissegundos.
   intervalo?: number;
   className?: string;
+  // Nome da região do carrossel, lido por leitores de tela.
+  rotulo?: string;
 };
 
 // Carrossel de banners: passa sozinho, para quando o mouse está em cima, e tem setas e bolinhas.
 // Os slides têm proporções diferentes, então a caixa segue a do primeiro e os outros ficam inteiros, centralizados.
-export function CarrosselBanner({ slides, intervalo = 6000, className }: Props) {
+export function CarrosselBanner({
+  slides,
+  intervalo = 6000,
+  className,
+  rotulo = "Destaques da Academy",
+}: Props) {
   const [api, setApi] = useState<CarouselApi>();
   const [atual, setAtual] = useState(0);
   const [pausado, setPausado] = useState(false);
@@ -52,7 +59,7 @@ export function CarrosselBanner({ slides, intervalo = 6000, className }: Props) 
   return (
     <section
       aria-roledescription="carrossel"
-      aria-label="Destaques da Academy"
+      aria-label={rotulo}
       className={cn("relative", className)}
       onMouseEnter={() => setPausado(true)}
       onMouseLeave={() => setPausado(false)}

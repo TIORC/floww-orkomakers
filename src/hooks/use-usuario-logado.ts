@@ -81,6 +81,23 @@ export function podeGerenciarFeriados(usuario: UsuarioLogado | null | undefined)
   );
 }
 
+// Carregar mídias (banners) na Academy: só o Desenvolvedor do Sistema (conta TI Maracas).
+// O servidor confere a mesma regra em src/lib/academy-banners.functions.ts.
+export function podeGerenciarBanners(usuario: UsuarioLogado | null | undefined) {
+  if (!usuario) return false;
+  return usuario.nivelAcesso === "desenvolvedor";
+}
+
+// Gerenciar vagas (excluir e fechar): mesmo critério de feriados (RH/administradores, conta master e Desenvolvedor do Sistema).
+export function podeGerenciarVagas(usuario: UsuarioLogado | null | undefined) {
+  if (!usuario) return false;
+  return (
+    usuario.acessoMaster ||
+    usuario.nivelAcesso === "administrador" ||
+    usuario.nivelAcesso === "desenvolvedor"
+  );
+}
+
 // Aprovar ou recusar avisos da equipe: Gestores, Administradores e o Desenvolvedor do Sistema (demonstração).
 export function podeAprovarAvisos(usuario: UsuarioLogado | null | undefined) {
   if (!usuario) return false;
@@ -123,7 +140,9 @@ export function useUsuarioLogado() {
 
       const { data, error } = await db
         .from("colaboradores_importados")
-        .select("nome, nome_completo, departamento, foto_url, acesso_master, nivel_acesso, ouvidor, cargo, cargo_visivel, gestor_direto_email")
+        .select(
+          "nome, nome_completo, departamento, foto_url, acesso_master, nivel_acesso, ouvidor, cargo, cargo_visivel, gestor_direto_email",
+        )
         .eq("email", email)
         .maybeSingle();
 

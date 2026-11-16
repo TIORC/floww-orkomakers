@@ -87,7 +87,7 @@ function BarraProgresso({ rotulo, valor, cor }: { rotulo: string; valor: number;
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="min-w-0 flex-1 text-[0.65rem] font-semibold leading-tight text-[oklch(0.24_0.11_261)]">{rotulo}</span>
+        <span className="min-w-0 flex-1 text-[0.65rem] font-semibold leading-tight text-white">{rotulo}</span>
         <span className="shrink-0 text-[0.65rem] font-bold text-muted-foreground">{valor}%</span>
       </div>
       <div

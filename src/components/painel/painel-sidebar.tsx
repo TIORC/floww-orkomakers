@@ -110,9 +110,9 @@ const TITULOS_SO_COM_ACESSO = ["Programação de Férias", "Feriados"];
 
 const SECOES_ACADEMY: Secao[] = [
   {
-    titulo: "Dashboard",
+    titulo: "Academy",
     icone: LayoutDashboard,
-    itens: [{ label: "Dashboard", icon: LayoutDashboard, to: "/academy" }],
+    itens: [{ label: "Academy", icon: LayoutDashboard, to: "/academy" }],
   },
 ];
 

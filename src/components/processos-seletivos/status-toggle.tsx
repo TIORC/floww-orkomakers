@@ -38,7 +38,7 @@ export function StatusToggle({
         initial={{ opacity: 0, x: -6 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.2 }}
-        className={`w-16 text-left text-sm font-semibold ${ativo ? "text-slate-900" : "text-red-500"}`}
+        className={`w-16 text-left text-sm font-semibold ${ativo ? "text-foreground" : "text-red-500"}`}
       >
         {ativo ? "Ativo" : "Fechado"}
       </motion.span>

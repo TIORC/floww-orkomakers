@@ -18,7 +18,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { LIMITE_PREDOMINANTE, ordenarPerfisDisc, PERFIS_DISC, type PercentuaisDisc } from "@/components/processos-seletivos/perfis-disc";
+import { BarraPercentualDisc, redistribuir } from "@/components/processos-seletivos/distribuicao-disc";
 import { listarSetores } from "@/lib/cargos";
 import { listarGestoresDoSetor } from "@/lib/organograma-dados";
 import { getIniciais } from "@/lib/iniciais";
@@ -36,6 +40,7 @@ const MOTIVOS_ABERTURA = [
 ];
 const BENEFICIOS = ["VR", "VA", "VT", "Plano de saúde", "Plano odontológico", "Outros"];
 const MOEDAS = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+const db = supabase as unknown as SupabaseClient<any>;
 
 type DadosVaga = {
   cargo: string;
@@ -53,6 +58,7 @@ type DadosVaga = {
   salarioMaximo: string;
   beneficios: string[];
   beneficioOutro: string;
+  beneficiosOutros: string[];
   dataInicio: string;
   escolaridade: string;
   experiencia: string;
@@ -61,6 +67,7 @@ type DadosVaga = {
   desejaveis: string;
   habilidades: string[];
   habilidadeRascunho: string;
+  disc: PercentuaisDisc;
   exigeCnh: boolean;
   viagens: boolean;
   exigeIdiomas: boolean;
@@ -86,9 +93,9 @@ type GestorVaga = {
 const DADOS_INICIAIS: DadosVaga = {
   cargo: "", setor: "", gestor: "", quantidade: "1", local: "", modalidade: "",
   motivo: "", substituido: "", justificativa: "", contrato: "", jornada: "",
-  salarioMinimo: "", salarioMaximo: "", beneficios: [], beneficioOutro: "", dataInicio: "",
+  salarioMinimo: "", salarioMaximo: "", beneficios: [], beneficioOutro: "", beneficiosOutros: [], dataInicio: "",
   escolaridade: "", experiencia: "", atividades: "", obrigatorios: "", desejaveis: "",
-  habilidades: [], habilidadeRascunho: "", exigeCnh: false, viagens: false, exigeIdiomas: false,
+  habilidades: [], habilidadeRascunho: "", disc: { Comunicador: 25, Executor: 25, Analista: 25, Planejador: 25 }, exigeCnh: false, viagens: false, exigeIdiomas: false,
   idiomas: "", prioridade: "média", confidencial: false, recrutamento: "", centroCusto: "",
   observacoes: "", anexo: null,
 };
@@ -128,9 +135,9 @@ function CaixaResumo({ titulo, etapa, onEditar, children }: {
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 p-4">
+    <section className="rounded-xl border border-border p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="font-semibold text-slate-900">{titulo}</h3>
+        <h3 className="font-semibold text-foreground">{titulo}</h3>
         <Button type="button" variant="ghost" size="sm" onClick={() => onEditar(etapa)}>Editar</Button>
       </div>
       <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">{children}</dl>
@@ -141,20 +148,59 @@ function CaixaResumo({ titulo, etapa, onEditar, children }: {
 function LinhaResumo({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs text-slate-500">{label}</dt>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="mt-0.5 whitespace-pre-wrap break-words text-sm">{value || "Não informado"}</dd>
     </div>
   );
 }
 
-export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+// Vaga já cadastrada, aberta para edição (cargo, setor e detalhes do formulário).
+export type VagaEditavel = { id: string; titulo: string; setor: string; detalhes: Record<string, unknown> | null };
+
+// Preenche o formulário com o que foi salvo na vaga. O arquivo anexado não é recuperado (só o nome).
+function dadosDaVaga(vaga: VagaEditavel): DadosVaga {
+  const salvos = (vaga.detalhes ?? {}) as Partial<DadosVaga>;
+  return {
+    ...DADOS_INICIAIS,
+    ...salvos,
+    cargo: vaga.titulo,
+    setor: vaga.setor,
+    quantidade: String(salvos.quantidade ?? 1),
+    anexo: null,
+    habilidadeRascunho: "",
+    beneficioOutro: "",
+  };
+}
+
+export function AbrirVagaDialog({
+  open,
+  onOpenChange,
+  vagaParaEditar = null,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  vagaParaEditar?: VagaEditavel | null;
+}) {
   const [etapa, setEtapa] = useState(0);
   const [dados, setDados] = useState<DadosVaga>(DADOS_INICIAIS);
   const [erros, setErros] = useState<Record<string, string>>({});
   const [arrastandoArquivo, setArrastandoArquivo] = useState(false);
   const [gestores, setGestores] = useState<GestorVaga[]>([]);
   const [carregandoGestores, setCarregandoGestores] = useState(false);
+  const [salvando, setSalvando] = useState(false);
   const inputArquivo = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+
+  // Reinicia o formulário ao abrir, ou ao trocar a vaga em edição (senão, sobram dados da vez anterior).
+  const idEdicao = vagaParaEditar?.id ?? null;
+  useEffect(() => {
+    if (!open) return;
+    setDados(vagaParaEditar ? dadosDaVaga(vagaParaEditar) : DADOS_INICIAIS);
+    setEtapa(0);
+    setErros({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, idEdicao]);
+  const somaDisc = PERFIS_DISC.reduce((total, perfil) => total + dados.disc[perfil.valor], 0);
 
   const { data: setoresLista = [] } = useQuery({ queryKey: ["setores"], queryFn: listarSetores, enabled: open });
 
@@ -216,16 +262,79 @@ export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenC
     if (validarEtapa(etapa)) setEtapa((atual) => Math.min(atual + 1, ETAPAS.length - 1));
   }
 
-  function enviarSolicitacao(event: FormEvent<HTMLFormElement>) {
+  async function enviarSolicitacao(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (salvando) return;
     for (let indice = 0; indice < 3; indice += 1) {
       if (!validarEtapa(indice)) {
         setEtapa(indice);
         return;
       }
     }
-    toast.info("Solicitação revisada. O envio ao RH será ativado quando a integração de vagas estiver conectada.");
-    onOpenChange(false);
+
+    setSalvando(true);
+    try {
+      const titulo = dados.cargo.trim();
+      const quantidade = Math.max(1, Math.floor(Number(dados.quantidade)) || 1);
+
+      // Reaproveita o cargo já cadastrado com o mesmo nome; senão cadastra em Cargos & Salários.
+      const { data: existente, error: erroBusca } = await db
+        .from("cargos")
+        .select("id")
+        .eq("nome", titulo)
+        .maybeSingle();
+      if (erroBusca) throw erroBusca;
+
+      let cargoId: string | undefined = existente?.id;
+      if (!cargoId) {
+        const { data: criado, error: erroCargo } = await db
+          .from("cargos")
+          .insert({ nome: titulo, setor: dados.setor })
+          .select("id")
+          .single();
+        if (erroCargo || !criado) throw erroCargo ?? new Error("Cargo não criado");
+        cargoId = criado.id;
+      }
+
+      // Formulário completo, sem o arquivo (só o nome) e sem os rascunhos dos campos de texto.
+      const detalhes = {
+        ...dados,
+        anexo: dados.anexo?.name ?? null,
+        habilidadeRascunho: undefined,
+        beneficioOutro: undefined,
+      };
+      if (vagaParaEditar) {
+        // Edição: atualiza só esta vaga (a quantidade não muda aqui).
+        const { error: erroEdicao } = await db
+          .from("vagas")
+          .update({ cargo_id: cargoId, setor: dados.setor, titulo, detalhes })
+          .eq("id", vagaParaEditar.id);
+        if (erroEdicao) throw erroEdicao;
+
+        await queryClient.invalidateQueries({ queryKey: ["vagas-abertas"] });
+        toast.success(`Vaga “${titulo}” atualizada.`);
+        fechar(false);
+        return;
+      }
+
+      const linhas = Array.from({ length: quantidade }, () => ({
+        cargo_id: cargoId,
+        setor: dados.setor,
+        titulo,
+        status: "ativa",
+        detalhes,
+      }));
+      const { error: erroVagas } = await db.from("vagas").insert(linhas);
+      if (erroVagas) throw erroVagas;
+
+      await queryClient.invalidateQueries({ queryKey: ["vagas-abertas"] });
+      toast.success(quantidade === 1 ? `Vaga “${titulo}” aberta.` : `${quantidade} vagas de “${titulo}” abertas.`);
+      fechar(false);
+    } catch {
+      toast.error(vagaParaEditar ? "Não foi possível salvar as alterações. Tente novamente." : "Não foi possível abrir a vaga. Tente novamente.");
+    } finally {
+      setSalvando(false);
+    }
   }
 
   function fechar(aberto: boolean) {
@@ -234,6 +343,13 @@ export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenC
       setEtapa(0);
       setErros({});
     }
+  }
+
+  function adicionarBeneficioOutro() {
+    const beneficio = dados.beneficioOutro.trim();
+    if (!beneficio || dados.beneficiosOutros.includes(beneficio)) return;
+    atualizar("beneficiosOutros", [...dados.beneficiosOutros, beneficio]);
+    atualizar("beneficioOutro", "");
   }
 
   function adicionarHabilidade() {
@@ -263,7 +379,7 @@ export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenC
   const precisaJustificativa = ["Aumento de quadro", "Nova função/cargo"].includes(dados.motivo);
   const nomeGestorSelecionado = gestores.find((gestor) => gestor.user_id === dados.gestor)?.nome ?? "";
   const prioridadeClasses: Record<string, string> = {
-    baixa: "border-slate-300 bg-slate-50 text-slate-700",
+    baixa: "border-input bg-muted text-foreground",
     média: "border-blue-300 bg-blue-50 text-blue-700",
     alta: "border-orange-300 bg-orange-50 text-orange-700",
     urgente: "border-red-300 bg-red-50 text-red-700",
@@ -271,16 +387,16 @@ export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenC
 
   return (
     <Dialog open={open} onOpenChange={fechar}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto border-slate-200 bg-white text-slate-900 sm:max-w-4xl [&_input]:border-slate-300 [&_input]:bg-white [&_input]:text-slate-900 [&_select]:border-slate-300 [&_select]:bg-white [&_select]:text-slate-900 [&_textarea]:border-slate-300 [&_textarea]:bg-white [&_textarea]:text-slate-900 [&_button[role=combobox]]:border-slate-300 [&_button[role=combobox]]:bg-white [&_button[role=combobox]]:text-slate-900">
+      <DialogContent className="max-h-[92vh] overflow-y-auto border-border bg-card text-foreground sm:max-w-4xl [&_input]:border-input [&_input]:bg-background [&_input]:text-foreground [&_select]:border-input [&_select]:bg-background [&_select]:text-foreground [&_textarea]:border-input [&_textarea]:bg-background [&_textarea]:text-foreground [&_button[role=combobox]]:border-input [&_button[role=combobox]]:bg-background [&_button[role=combobox]]:text-foreground">
         <DialogHeader className="pr-7">
-          <DialogTitle className="font-display text-2xl">Abrir vaga</DialogTitle>
+          <DialogTitle className="font-display text-2xl">{vagaParaEditar ? "Editar vaga" : "Abrir vaga"}</DialogTitle>
           <DialogDescription>Preencha a solicitação em quatro etapas. Os campos com * são obrigatórios.</DialogDescription>
         </DialogHeader>
 
         <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Etapas da solicitação">
           {ETAPAS.map((nome, indice) => (
             <li key={nome}>
-              <button type="button" onClick={() => indice < etapa && setEtapa(indice)} className={cn("flex w-full items-center gap-2 rounded-lg border p-2 text-left text-xs", indice === etapa ? "border-amber-500 bg-amber-400/5 text-amber-600" : indice < etapa ? "border-amber-500/30 text-slate-900" : "border-slate-200 text-slate-500")}>
+              <button type="button" onClick={() => indice < etapa && setEtapa(indice)} className={cn("flex w-full items-center gap-2 rounded-lg border p-2 text-left text-xs", indice === etapa ? "border-amber-500 bg-amber-400/5 text-amber-600" : indice < etapa ? "border-amber-500/30 text-foreground" : "border-border text-muted-foreground")}>
                 <span className="grid size-6 shrink-0 place-items-center rounded-full border text-[11px] font-semibold">{indice < etapa ? <Check className="size-3.5" /> : indice + 1}</span>
                 <span className="leading-tight">{nome}</span>
               </button>
@@ -322,7 +438,7 @@ export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenC
                             </Avatar>
                             <span className="min-w-0">
                               <span className="block truncate">{gestor.nome}</span>
-                              <span className="block truncate text-xs text-slate-500">{gestor.cargo} · {gestor.setor_sigla}</span>
+                              <span className="block truncate text-xs text-muted-foreground">{gestor.cargo} · {gestor.setor_sigla}</span>
                             </span>
                           </span>
                         </SelectItem>
@@ -334,7 +450,7 @@ export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenC
                   </Select>
                 </Campo>
                 <Campo label="Quantidade de vagas" required error={erros["quantidade"]}>
-                  <Input type="number" min={1} step={1} value={dados.quantidade} onChange={(event) => atualizar("quantidade", event.target.value)} />
+                  <Input type="number" min={1} step={1} value={dados.quantidade} disabled={Boolean(vagaParaEditar)} onChange={(event) => atualizar("quantidade", event.target.value)} />
                 </Campo>
                 <Campo label="Local de trabalho">
                   <Input value={dados.local} onChange={(event) => atualizar("local", event.target.value)} placeholder="Unidade ou cidade" />
@@ -390,9 +506,16 @@ export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenC
                   </div>
                 </fieldset>
                 {dados.beneficios.includes("Outros") ? (
-                  <Campo label="Outros benefícios" className="sm:col-span-2">
-                    <Input value={dados.beneficioOutro} onChange={(event) => atualizar("beneficioOutro", event.target.value)} />
-                  </Campo>
+                  <fieldset className="grid gap-2 sm:col-span-2">
+                    <legend className="mb-1 text-sm font-medium">Outros benefícios</legend>
+                    <div className="flex gap-2">
+                      <Input value={dados.beneficioOutro} onChange={(event) => atualizar("beneficioOutro", event.target.value)} placeholder="Ex.: Gympass" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); adicionarBeneficioOutro(); } }} />
+                      <Button type="button" variant="outline" size="icon" aria-label="Adicionar benefício" onClick={adicionarBeneficioOutro}><Plus className="size-4" /></Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {dados.beneficiosOutros.map((beneficio) => <span key={beneficio} className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-600">{beneficio}<button type="button" aria-label={`Remover ${beneficio}`} onClick={() => atualizar("beneficiosOutros", dados.beneficiosOutros.filter((item) => item !== beneficio))}><X className="size-3" /></button></span>)}
+                    </div>
+                  </fieldset>
                 ) : null}
                 <Campo label="Data desejada para início">
                   <Input type="date" value={dados.dataInicio} onChange={(event) => atualizar("dataInicio", event.target.value)} />
@@ -431,6 +554,22 @@ export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenC
                     {dados.habilidades.map((habilidade) => <span key={habilidade} className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-600">{habilidade}<button type="button" aria-label={`Remover ${habilidade}`} onClick={() => atualizar("habilidades", dados.habilidades.filter((item) => item !== habilidade))}><X className="size-3" /></button></span>)}
                   </div>
                 </fieldset>
+                <fieldset className="grid gap-4 sm:col-span-2">
+                  <legend className="mb-1 text-sm font-medium">Perfil DISC desejável</legend>
+                  <p className="-mt-2 text-xs text-muted-foreground">Ajuste os percentuais: ao mudar um, os outros se reajustam para a soma dar 100%.</p>
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    {PERFIS_DISC.map((perfil) => (
+                      <BarraPercentualDisc
+                        key={perfil.valor}
+                        perfil={perfil.valor}
+                        valor={dados.disc[perfil.valor]}
+                        predominante={dados.disc[perfil.valor] > LIMITE_PREDOMINANTE}
+                        aoAplicar={(novo) => atualizar("disc", redistribuir(dados.disc, perfil.valor, novo))}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Total: {somaDisc}%</p>
+                </fieldset>
                 <div className="flex flex-wrap gap-x-6 gap-y-3 sm:col-span-2">
                   <label className="flex items-center gap-2 text-sm"><Checkbox checked={dados.exigeCnh} onCheckedChange={(checked) => atualizar("exigeCnh", checked === true)} />Exige CNH</label>
                   <label className="flex items-center gap-2 text-sm"><Checkbox checked={dados.viagens} onCheckedChange={(checked) => atualizar("viagens", checked === true)} />Disponibilidade para viagens</label>
@@ -454,8 +593,8 @@ export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenC
                     ))}
                   </div>
                 </div>
-                <div className="flex items-center justify-between rounded-xl border border-slate-200 p-3">
-                  <div><p className="text-sm font-medium">Vaga confidencial</p><p className="text-xs text-slate-500">Restringe a divulgação inicial da posição.</p></div>
+                <div className="flex items-center justify-between rounded-xl border border-border p-3">
+                  <div><p className="text-sm font-medium">Vaga confidencial</p><p className="text-xs text-muted-foreground">Restringe a divulgação inicial da posição.</p></div>
                   <Switch checked={dados.confidencial} onCheckedChange={(checked) => atualizar("confidencial", checked)} aria-label="Vaga confidencial" />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -474,15 +613,15 @@ export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenC
 
                 <div>
                   <input ref={inputArquivo} type="file" accept=".pdf,.doc,.docx,.odt" className="sr-only" onChange={(event) => aceitarArquivo(event.target.files?.[0])} />
-                  <button type="button" onClick={() => inputArquivo.current?.click()} onDragOver={(event) => { event.preventDefault(); setArrastandoArquivo(true); }} onDragLeave={() => setArrastandoArquivo(false)} onDrop={soltarArquivo} className={cn("flex min-h-28 w-full flex-col items-center justify-center rounded-xl border border-dashed px-4 py-5 text-center transition-colors", arrastandoArquivo ? "border-amber-500 bg-amber-400/5" : "border-slate-200 hover:border-amber-500/50")}>
-                    {dados.anexo ? <FileText className="mb-2 size-6 text-amber-600" aria-hidden /> : <Upload className="mb-2 size-6 text-slate-500" aria-hidden />}
+                  <button type="button" onClick={() => inputArquivo.current?.click()} onDragOver={(event) => { event.preventDefault(); setArrastandoArquivo(true); }} onDragLeave={() => setArrastandoArquivo(false)} onDrop={soltarArquivo} className={cn("flex min-h-28 w-full flex-col items-center justify-center rounded-xl border border-dashed px-4 py-5 text-center transition-colors", arrastandoArquivo ? "border-amber-500 bg-amber-400/5" : "border-border hover:border-amber-500/50")}>
+                    {dados.anexo ? <FileText className="mb-2 size-6 text-amber-600" aria-hidden /> : <Upload className="mb-2 size-6 text-muted-foreground" aria-hidden />}
                     <span className="text-sm font-medium">{dados.anexo ? dados.anexo.name : "Anexe a descrição do cargo"}</span>
-                    <span className="mt-1 text-xs text-slate-500">Arraste o arquivo para cá ou clique para escolher · PDF, DOC ou DOCX</span>
+                    <span className="mt-1 text-xs text-muted-foreground">Arraste o arquivo para cá ou clique para escolher · PDF, DOC ou DOCX</span>
                   </button>
                   {dados.anexo ? <Button type="button" variant="ghost" size="sm" className="mt-1" onClick={() => atualizar("anexo", null)}>Remover anexo</Button> : null}
                 </div>
 
-                <div className="grid gap-3 border-t border-slate-200 pt-5">
+                <div className="grid gap-3 border-t border-border pt-5">
                   <h3 className="font-display text-lg font-semibold">Resumo da solicitação</h3>
                   <CaixaResumo titulo="Informações básicas" etapa={0} onEditar={setEtapa}>
                     <LinhaResumo label="Cargo" value={dados.cargo} /><LinhaResumo label="Setor" value={dados.setor} />
@@ -494,13 +633,13 @@ export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenC
                     <LinhaResumo label="Substituído/justificativa" value={dados.substituido || dados.justificativa} />
                     <LinhaResumo label="Contrato e jornada" value={[dados.contrato, dados.jornada].filter(Boolean).join(" · ")} />
                     <LinhaResumo label="Faixa salarial" value={[dados.salarioMinimo, dados.salarioMaximo].filter(Boolean).join(" – ")} />
-                    <LinhaResumo label="Benefícios" value={[...dados.beneficios.filter((item) => item !== "Outros"), dados.beneficioOutro].filter(Boolean).join(", ")} />
+                    <LinhaResumo label="Benefícios" value={[...dados.beneficios.filter((item) => item !== "Outros"), ...(dados.beneficios.includes("Outros") ? dados.beneficiosOutros : [])].filter(Boolean).join(", ")} />
                     <LinhaResumo label="Início desejado" value={dados.dataInicio} />
                   </CaixaResumo>
                   <CaixaResumo titulo="Perfil da vaga" etapa={2} onEditar={setEtapa}>
                     <LinhaResumo label="Escolaridade" value={dados.escolaridade} /><LinhaResumo label="Experiência" value={dados.experiencia} />
                     <LinhaResumo label="Atividades" value={dados.atividades} /><LinhaResumo label="Requisitos obrigatórios" value={dados.obrigatorios} />
-                    <LinhaResumo label="Requisitos desejáveis" value={dados.desejaveis} /><LinhaResumo label="Habilidades" value={resumoValor(dados.habilidades)} />
+                    <LinhaResumo label="Requisitos desejáveis" value={dados.desejaveis} /><LinhaResumo label="Habilidades" value={resumoValor(dados.habilidades)} /><LinhaResumo label="Perfil DISC desejável" value={ordenarPerfisDisc(dados.disc).map((item) => `${item.perfil} ${item.valor}%`).join(" · ")} />
                     <LinhaResumo label="CNH / viagens / idiomas" value={[dados.exigeCnh && "CNH", dados.viagens && "Viagens", dados.exigeIdiomas && dados.idiomas].filter(Boolean).join(" · ")} />
                   </CaixaResumo>
                   <CaixaResumo titulo="Controle" etapa={3} onEditar={setEtapa}>
@@ -513,14 +652,14 @@ export function AbrirVagaDialog({ open, onOpenChange }: { open: boolean; onOpenC
             ) : null}
           </motion.div>
 
-          <DialogFooter className="flex-row justify-between border-t border-slate-200 pt-4">
+          <DialogFooter className="flex-row justify-between border-t border-border pt-4">
             <Button type="button" variant="outline" onClick={() => etapa > 0 ? setEtapa((atual) => atual - 1) : fechar(false)}>
               {etapa > 0 ? <><ChevronLeft className="size-4" />Voltar</> : "Cancelar"}
             </Button>
             {etapa < ETAPAS.length - 1 ? (
               <Button type="button" onClick={avancar}>Continuar<ChevronRight className="size-4" /></Button>
             ) : (
-              <Button type="submit">Enviar solicitação</Button>
+              <Button type="submit">{vagaParaEditar ? "Salvar alterações" : "Enviar solicitação"}</Button>
             )}
           </DialogFooter>
         </form>

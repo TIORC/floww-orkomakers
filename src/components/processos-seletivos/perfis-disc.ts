@@ -56,3 +56,19 @@ export const TONS_DISC: Record<
     ponto: "bg-emerald-500",
   },
 };
+
+/** Acima deste percentual o perfil é predominante; o restante é secundário. */
+export const LIMITE_PREDOMINANTE = 30;
+
+/**
+ * Perfis do maior para o menor percentual (empates seguem a ordem de PERFIS_DISC).
+ * Quem passa de LIMITE_PREDOMINANTE é predominante; os demais são secundários.
+ */
+export function ordenarPerfisDisc(valores: Partial<Record<PerfilDisc, number>>) {
+  return PERFIS_DISC.map((perfil) => ({
+    perfil: perfil.valor,
+    valor: valores[perfil.valor] ?? 0,
+  }))
+    .sort((a, b) => b.valor - a.valor)
+    .map((item) => ({ ...item, predominante: item.valor > LIMITE_PREDOMINANTE }));
+}

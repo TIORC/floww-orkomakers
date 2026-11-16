@@ -97,7 +97,12 @@ function ProgramacaoFeriasPage() {
   const emailDoUsuario = usuario?.email ?? "";
   // Por padrão, abre na linhagem do gestor direto de quem está logado.
   const gestorDoUsuario = usuario?.gestorDiretoEmail || emailDoUsuario;
-  const emailGestor = veTodosOsSetores ? (gestorEscolhido ?? gestorDoUsuario) : emailDoUsuario;
+  // Gestor vê a própria equipe; colaborador vê a equipe do gestor direto dele (os colegas).
+  const emailGestor = veTodosOsSetores
+    ? (gestorEscolhido ?? gestorDoUsuario)
+    : podeProgramar
+      ? emailDoUsuario
+      : gestorDoUsuario;
   const { data: pessoasOrganograma = [] } = useQuery({
     queryKey: ["organograma"],
     queryFn: buscarPessoasOrganograma,
@@ -137,8 +142,10 @@ function ProgramacaoFeriasPage() {
       ]
     : [];
 
-  // Quem programa vê o calendário da pessoa escolhida; os demais veem só o próprio calendário.
-  const emailDoCalendario = podeProgramar ? (colaboradorSelecionado?.email ?? "") : emailDoUsuario;
+  // Quem programa vê o calendário da pessoa escolhida. Os demais veem o próprio, ou o de um colega da equipe que escolherem.
+  const emailDoCalendario = podeProgramar
+    ? (colaboradorSelecionado?.email ?? "")
+    : (colaboradorSelecionado?.email ?? emailDoUsuario);
   const feriasProgramadas = useQuery({
     queryKey: ["ferias-programadas", emailDoCalendario],
     queryFn: () => listarFeriasProgramadas(emailDoCalendario),
@@ -192,8 +199,8 @@ function ProgramacaoFeriasPage() {
     }
   }
 
+  // Quem não programa só escolhe um colega para ver o calendário dele; não há edição.
   function escolherColaborador(pessoa: PessoaDaEquipe) {
-    if (!podeProgramar) return;
     setColaboradorSelecionado(pessoa);
     setSelecao({ inicio: null, fim: null });
   }
@@ -269,7 +276,7 @@ function ProgramacaoFeriasPage() {
             <p className="mt-2 max-w-2xl text-sm text-white/80">
               {podeProgramar
                 ? "Escolha um colaborador da equipe e programe o período de férias dele. Programar não efetiva as férias."
-                : "Veja o calendário das suas férias programadas pelo seu gestor."}
+                : "Veja a equipe do seu gestor e clique em um colega para ver as férias programadas dele."}
             </p>
           </div>
           {veTodosOsSetores ? (
@@ -335,7 +342,7 @@ function ProgramacaoFeriasPage() {
                       {/* O líder também é programável: pode programar as próprias férias (ou as de quem ele lidera). */}
                       <CartaoDaEquipe
                         pessoa={{ email: lider.email, nome: lider.nome }}
-                        podeEscolher={podeProgramar}
+                        podeEscolher
                         selecionado={colaboradorSelecionado?.email === lider.email}
                         aoEscolher={escolherColaborador}
                       >
@@ -365,7 +372,7 @@ function ProgramacaoFeriasPage() {
                     <li key={colaborador.id}>
                       <CartaoDaEquipe
                         pessoa={colaborador}
-                        podeEscolher={podeProgramar}
+                        podeEscolher
                         selecionado={colaboradorSelecionado?.email === colaborador.email}
                         aoEscolher={escolherColaborador}
                       >
@@ -395,7 +402,7 @@ function ProgramacaoFeriasPage() {
                     <li key={colaborador.id}>
                       <CartaoDaEquipe
                         pessoa={colaborador}
-                        podeEscolher={podeProgramar}
+                        podeEscolher
                         selecionado={colaboradorSelecionado?.email === colaborador.email}
                         aoEscolher={escolherColaborador}
                       >
