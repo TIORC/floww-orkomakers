@@ -5,7 +5,7 @@ import { Coins, Minus, Plus, ShoppingBag, ShoppingCart, Trash2 } from "lucide-re
 import { ConheçaLojaDialog } from "@/components/onboarding/conheca-loja-dialog";
 import { PainelSidebar } from "@/components/painel/painel-sidebar";
 import { catalogoJaVisitado, marcarCatalogoVisitado } from "@/lib/onboarding-catalogo";
-import { PRODUTOS } from "@/lib/produtos-loja";
+import { imagemProduto, PRODUTOS } from "@/lib/produtos-loja";
 
 export const Route = createFileRoute("/catalogo")({
   head: () => ({
@@ -116,9 +116,11 @@ function CatalogoPage() {
                       const quantidade = carrinho[produto.id];
                       return (
                         <li key={produto.id} className="flex items-center gap-3 py-3">
-                          <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-panel-active">
-                            <produto.icone className="size-6 text-brand" aria-hidden />
-                          </div>
+                          <img
+                            src={imagemProduto(produto)}
+                            alt=""
+                            className="size-12 shrink-0 rounded-lg"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-white">
                               {produto.nome}
@@ -201,8 +203,13 @@ function CatalogoPage() {
                   key={produto.id}
                   className="flex flex-col overflow-hidden rounded-xl border border-panel-active bg-background transition hover:border-brand/60 hover:shadow-lg"
                 >
-                  <div className="flex h-36 items-center justify-center bg-panel-active">
-                    <produto.icone className="size-14 text-brand" aria-hidden />
+                  <div className="flex h-44 items-center justify-center bg-panel-active">
+                    <img
+                      src={imagemProduto(produto)}
+                      alt={produto.nome}
+                      loading="lazy"
+                      className="size-36 rounded-lg"
+                    />
                   </div>
                   <div className="flex flex-1 flex-col gap-2 p-4">
                     <span className="text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-panel-text">

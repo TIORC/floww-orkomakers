@@ -16,6 +16,7 @@ import {
   ClipboardList,
   FileSearch,
   GraduationCap,
+  HeartHandshake,
   Home,
   LayoutDashboard,
   History,
@@ -70,6 +71,7 @@ const SECOES_PRINCIPAIS: Secao[] = [
         to: "/gamificacao",
         filhos: [{ label: "Histórico", icon: History, to: "/gamificacao/historico" }],
       },
+      { label: "Reconhecimentos", icon: HeartHandshake, to: "/reconhecimentos" },
     ],
   },
   {

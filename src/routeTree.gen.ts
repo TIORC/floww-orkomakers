@@ -34,6 +34,7 @@ import { Route as PesquisaSatisfacaoRouteImport } from './routes/pesquisa-satisf
 import { Route as PlanosDesenvolvimentoRouteImport } from './routes/planos-desenvolvimento'
 import { Route as ProcessosSeletivosRouteImport } from './routes/processos-seletivos'
 import { Route as ProgramacaoFeriasRouteImport } from './routes/programacao-ferias'
+import { Route as ReconhecimentosRouteImport } from './routes/reconhecimentos'
 import { Route as RelatoriosGeraisRouteImport } from './routes/relatorios-gerais'
 import { Route as Reunioes11RouteImport } from './routes/reunioes-1-1'
 import { Route as SetoresRouteImport } from './routes/setores'
@@ -169,6 +170,11 @@ const ProgramacaoFeriasRoute = ProgramacaoFeriasRouteImport.update({
   path: '/programacao-ferias',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReconhecimentosRoute = ReconhecimentosRouteImport.update({
+  id: '/reconhecimentos',
+  path: '/reconhecimentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RelatoriosGeraisRoute = RelatoriosGeraisRouteImport.update({
   id: '/relatorios-gerais',
   path: '/relatorios-gerais',
@@ -237,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRouteWithChildren
   '/processos-seletivos': typeof ProcessosSeletivosRoute
   '/programacao-ferias': typeof ProgramacaoFeriasRoute
+  '/reconhecimentos': typeof ReconhecimentosRoute
   '/relatorios-gerais': typeof RelatoriosGeraisRoute
   '/reunioes-1-1': typeof Reunioes11Route
   '/setores': typeof SetoresRoute
@@ -272,6 +279,7 @@ export interface FileRoutesByTo {
   '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRouteWithChildren
   '/processos-seletivos': typeof ProcessosSeletivosRoute
   '/programacao-ferias': typeof ProgramacaoFeriasRoute
+  '/reconhecimentos': typeof ReconhecimentosRoute
   '/relatorios-gerais': typeof RelatoriosGeraisRoute
   '/reunioes-1-1': typeof Reunioes11Route
   '/setores': typeof SetoresRoute
@@ -308,6 +316,7 @@ export interface FileRoutesById {
   '/planos-desenvolvimento': typeof PlanosDesenvolvimentoRouteWithChildren
   '/processos-seletivos': typeof ProcessosSeletivosRoute
   '/programacao-ferias': typeof ProgramacaoFeriasRoute
+  '/reconhecimentos': typeof ReconhecimentosRoute
   '/relatorios-gerais': typeof RelatoriosGeraisRoute
   '/reunioes-1-1': typeof Reunioes11Route
   '/setores': typeof SetoresRoute
@@ -345,6 +354,7 @@ export interface FileRouteTypes {
     | '/planos-desenvolvimento'
     | '/processos-seletivos'
     | '/programacao-ferias'
+    | '/reconhecimentos'
     | '/relatorios-gerais'
     | '/reunioes-1-1'
     | '/setores'
@@ -380,6 +390,7 @@ export interface FileRouteTypes {
     | '/planos-desenvolvimento'
     | '/processos-seletivos'
     | '/programacao-ferias'
+    | '/reconhecimentos'
     | '/relatorios-gerais'
     | '/reunioes-1-1'
     | '/setores'
@@ -415,6 +426,7 @@ export interface FileRouteTypes {
     | '/planos-desenvolvimento'
     | '/processos-seletivos'
     | '/programacao-ferias'
+    | '/reconhecimentos'
     | '/relatorios-gerais'
     | '/reunioes-1-1'
     | '/setores'
@@ -451,6 +463,7 @@ export interface RootRouteChildren {
   PlanosDesenvolvimentoRoute: typeof PlanosDesenvolvimentoRouteWithChildren
   ProcessosSeletivosRoute: typeof ProcessosSeletivosRoute
   ProgramacaoFeriasRoute: typeof ProgramacaoFeriasRoute
+  ReconhecimentosRoute: typeof ReconhecimentosRoute
   RelatoriosGeraisRoute: typeof RelatoriosGeraisRoute
   Reunioes11Route: typeof Reunioes11Route
   SetoresRoute: typeof SetoresRoute
@@ -636,6 +649,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProgramacaoFeriasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reconhecimentos': {
+      id: '/reconhecimentos'
+      path: '/reconhecimentos'
+      fullPath: '/reconhecimentos'
+      preLoaderRoute: typeof ReconhecimentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/relatorios-gerais': {
       id: '/relatorios-gerais'
       path: '/relatorios-gerais'
@@ -746,6 +766,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlanosDesenvolvimentoRoute: PlanosDesenvolvimentoRouteWithChildren,
   ProcessosSeletivosRoute: ProcessosSeletivosRoute,
   ProgramacaoFeriasRoute: ProgramacaoFeriasRoute,
+  ReconhecimentosRoute: ReconhecimentosRoute,
   RelatoriosGeraisRoute: RelatoriosGeraisRoute,
   Reunioes11Route: Reunioes11Route,
   SetoresRoute: SetoresRoute,

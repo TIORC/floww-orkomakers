@@ -138,6 +138,16 @@ export function podeVerTodosOsSetores(usuario: UsuarioLogado | null | undefined)
   );
 }
 
+// Quem pode anunciar promoção de colaborador: só Desenvolvedor do Sistema e Administradores.
+export function podeAnunciarPromocao(usuario: UsuarioLogado | null | undefined) {
+  if (!usuario) return false;
+  return (
+    usuario.acessoMaster ||
+    usuario.nivelAcesso === "desenvolvedor" ||
+    usuario.nivelAcesso === "administrador"
+  );
+}
+
 // Quem pode alterar o papel de acesso das pessoas: Desenvolvedor do Sistema (conta mestre) ou Administrador.
 export function podeAlterarPapeis(usuario: UsuarioLogado | null | undefined) {
   if (!usuario) return false;

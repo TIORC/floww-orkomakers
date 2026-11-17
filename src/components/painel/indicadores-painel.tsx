@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Award, CodeXml, Flame, TrendingUp, type LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useUsuarioLogado } from "@/hooks/use-usuario-logado";
+import { contarReconhecimentosTrimestre, trimestreAtual } from "@/lib/reconhecimentos";
 import { CardAcessosDiarios } from "@/components/painel/card-acessos-diarios";
 
 const CARD = "flex h-[230px] w-[280px] shrink-0 flex-col rounded-2xl border border-border bg-card p-5";
@@ -56,7 +59,16 @@ function CardMetrica({
   );
 }
 
+// Recebidos e enviados no trimestre atual, contando as mesmas publicações da página de Reconhecimentos.
 function CardReconhecimentos() {
+  const { data: usuario } = useUsuarioLogado();
+  const trimestre = trimestreAtual();
+  const { data, isError } = useQuery({
+    queryKey: ["reconhecimentos-trimestre", usuario?.email ?? "", trimestre.inicio.toISOString()],
+    queryFn: () => contarReconhecimentosTrimestre(usuario?.email ?? "", usuario?.setor ?? ""),
+    enabled: Boolean(usuario?.email),
+  });
+
   return (
     <article className={CARD}>
       <div className="flex items-center gap-3">
@@ -64,20 +76,26 @@ function CardReconhecimentos() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Recebidos</p>
-            <p className="font-display text-2xl font-bold text-foreground">—</p>
+            <p className="font-display text-2xl font-bold text-foreground">{data ? data.recebidos : "—"}</p>
           </div>
           <div>
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Enviados</p>
-            <p className="font-display text-2xl font-bold text-foreground">—</p>
+            <p className="font-display text-2xl font-bold text-foreground">{data ? data.enviados : "—"}</p>
           </div>
         </div>
       </div>
       <h3 className="mt-2 text-sm font-semibold text-muted-foreground">Reconhecimentos</h3>
 
       <div className="mt-auto">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-          Dados indisponíveis
-        </span>
+        {isError ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+            Dados indisponíveis
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+            {trimestre.rotulo}
+          </span>
+        )}
       </div>
     </article>
   );

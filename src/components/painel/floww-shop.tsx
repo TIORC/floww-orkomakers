@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronRight, Coins } from "lucide-react";
 
-import { PRODUTOS } from "@/lib/produtos-loja";
+import { imagemProduto, PRODUTOS, QUANTIDADE_VITRINE } from "@/lib/produtos-loja";
 
 export function FlowwShop() {
   const saldo = 0;
-  const destaques = PRODUTOS.slice(0, 3);
+  const destaques = PRODUTOS.slice(0, QUANTIDADE_VITRINE);
 
   return (
     <section aria-label="Floww Shop" className="w-full">
@@ -28,19 +28,24 @@ export function FlowwShop() {
           {destaques.length === 0 ? (
             <p className="py-8 text-center text-sm text-panel-text">Nenhum produto disponível.</p>
           ) : (
-            <ul className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
+            <ul className="grid w-full grid-cols-1 gap-[18px] sm:grid-cols-3">
               {destaques.map((produto) => (
                 <li
                   key={produto.id}
-                  className="flex items-center gap-3 rounded-xl bg-panel-active/60 p-3"
+                  className="flex items-center gap-[18px] rounded-xl bg-panel-active/60 p-[18px]"
                 >
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-panel">
-                    <produto.icone className="size-5 text-brand" aria-hidden />
-                  </div>
+                  <img
+                    src={imagemProduto(produto)}
+                    alt=""
+                    loading="lazy"
+                    className="size-[66px] shrink-0 rounded-lg"
+                  />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">{produto.nome}</p>
-                    <p className="inline-flex items-center gap-1 text-xs font-semibold text-brand">
-                      <Coins className="size-3" aria-hidden />
+                    <p className="line-clamp-2 text-base font-semibold leading-snug text-foreground">
+                      {produto.nome}
+                    </p>
+                    <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
+                      <Coins className="size-4" aria-hidden />
                       {produto.preco}
                     </p>
                   </div>

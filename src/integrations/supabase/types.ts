@@ -274,6 +274,135 @@ export type Database = {
         }
         Relationships: []
       }
+      reconhecimentos: {
+        Row: {
+          autor_email: string
+          autor_foto: string | null
+          autor_nome: string
+          cargo_promovido: string | null
+          criado_em: string
+          id: string
+          mensagem: string
+          tipo: string
+        }
+        Insert: {
+          autor_email: string
+          autor_foto?: string | null
+          autor_nome?: string
+          cargo_promovido?: string | null
+          criado_em?: string
+          id?: string
+          mensagem: string
+          tipo?: string
+        }
+        Update: {
+          autor_email?: string
+          autor_foto?: string | null
+          autor_nome?: string
+          cargo_promovido?: string | null
+          criado_em?: string
+          id?: string
+          mensagem?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      reconhecimento_mencoes: {
+        Row: {
+          foto_url: string | null
+          id: string
+          reconhecimento_id: string
+          rotulo: string
+          tipo: string
+          valor: string
+        }
+        Insert: {
+          foto_url?: string | null
+          id?: string
+          reconhecimento_id: string
+          rotulo: string
+          tipo: string
+          valor: string
+        }
+        Update: {
+          foto_url?: string | null
+          id?: string
+          reconhecimento_id?: string
+          rotulo?: string
+          tipo?: string
+          valor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconhecimento_mencoes_reconhecimento_id_fkey"
+            columns: ["reconhecimento_id"]
+            isOneToOne: false
+            referencedRelation: "reconhecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reconhecimento_curtidas: {
+        Row: {
+          colaborador_email: string
+          criado_em: string
+          reconhecimento_id: string
+        }
+        Insert: {
+          colaborador_email: string
+          criado_em?: string
+          reconhecimento_id: string
+        }
+        Update: {
+          colaborador_email?: string
+          criado_em?: string
+          reconhecimento_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconhecimento_curtidas_reconhecimento_id_fkey"
+            columns: ["reconhecimento_id"]
+            isOneToOne: false
+            referencedRelation: "reconhecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reconhecimento_comentarios: {
+        Row: {
+          autor_email: string
+          autor_nome: string
+          criado_em: string
+          id: string
+          reconhecimento_id: string
+          texto: string
+        }
+        Insert: {
+          autor_email: string
+          autor_nome?: string
+          criado_em?: string
+          id?: string
+          reconhecimento_id: string
+          texto: string
+        }
+        Update: {
+          autor_email?: string
+          autor_nome?: string
+          criado_em?: string
+          id?: string
+          reconhecimento_id?: string
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconhecimento_comentarios_reconhecimento_id_fkey"
+            columns: ["reconhecimento_id"]
+            isOneToOne: false
+            referencedRelation: "reconhecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_envios: {
         Row: {
           assunto: string | null
