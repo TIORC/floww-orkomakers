@@ -1,4 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
+import { useEffect, useLayoutEffect, useRef, useState, type FocusEvent } from "react";
 
 import { useRegistrarPresenca } from "@/lib/presenca";
 import { podeVerMenuRH, podeVerProgramacaoFerias, useUsuarioLogado } from "@/hooks/use-usuario-logado";
@@ -217,26 +218,71 @@ function MenuSecao({ secao }: { secao: Secao }) {
   const caminho = useLocation({ select: (local) => local.pathname });
   // A seção fica destacada quando a página atual é um dos seus itens
   const ativa = linksDaSecao(secao.itens).includes(caminho);
+  // O submenu é `fixed` (não é cortado pela rolagem do menu) e fica ao lado do botão da seção
+  const [posicao, setPosicao] = useState<{ top: number; left: number } | null>(null);
+  const liRef = useRef<HTMLLIElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+
+  function abrir() {
+    const rect = liRef.current?.getBoundingClientRect();
+    if (rect) setPosicao({ top: rect.top, left: rect.right });
+  }
+
+  function fecharSeFocoSaiu(evento: FocusEvent<HTMLLIElement>) {
+    const destino = evento.relatedTarget;
+    if (destino instanceof Node && liRef.current?.contains(destino)) return;
+    setPosicao(null);
+  }
+
+  // Ao rolar o menu ou redimensionar a janela, fecha o submenu para não ficar desalinhado
+  useEffect(() => {
+    if (!posicao) return;
+    const fechar = () => setPosicao(null);
+    window.addEventListener("scroll", fechar, true);
+    window.addEventListener("resize", fechar);
+    return () => {
+      window.removeEventListener("scroll", fechar, true);
+      window.removeEventListener("resize", fechar);
+    };
+  }, [posicao]);
+
+  // Se o submenu passar do fim da tela, sobe um pouco para caber
+  useLayoutEffect(() => {
+    const popup = popupRef.current;
+    if (!popup || !posicao) return;
+    const topo = Math.max(8, Math.min(posicao.top, window.innerHeight - popup.offsetHeight - 8));
+    if (topo !== posicao.top) setPosicao({ ...posicao, top: topo });
+  }, [posicao]);
+
   return (
-    <li className="group relative">
+    <li
+      ref={liRef}
+      onMouseEnter={abrir}
+      onMouseLeave={() => setPosicao(null)}
+      onFocus={abrir}
+      onBlur={fecharSeFocoSaiu}
+    >
       <button
         type="button"
         aria-haspopup="true"
+        aria-expanded={posicao !== null}
         className={`${LINK_BASE} w-full text-left hover:bg-panel-active/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${ativa ? "bg-panel-active text-brand" : "text-panel-text"}`}
       >
         <Icone className="size-4 shrink-0" aria-hidden />
         <span className="flex-1">{secao.titulo}</span>
         <ChevronRight className="size-4 shrink-0" aria-hidden />
       </button>
-      <div className="absolute left-full top-0 z-20 hidden pl-2 group-hover:block group-focus-within:block">
-        <ul className="relative grid w-64 rounded-xl border border-panel-active bg-panel p-1.5 shadow-xl before:absolute before:-left-2 before:top-0 before:h-full before:w-2 before:content-['']">
-          {secao.itens.map((item) => (
-            <li key={item.label}>
-              <ItemMenuView item={item} />
-            </li>
-          ))}
-        </ul>
-      </div>
+      {posicao && (
+        <div ref={popupRef} className="fixed z-30 pl-2" style={{ top: posicao.top, left: posicao.left }}>
+          <ul className="relative grid w-64 rounded-xl border border-panel-active bg-panel p-1.5 shadow-xl before:absolute before:-left-2 before:top-0 before:h-full before:w-2 before:content-['']">
+            {secao.itens.map((item) => (
+              <li key={item.label}>
+                <ItemMenuView item={item} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </li>
   );
 }
@@ -251,7 +297,7 @@ export function PainelSidebar() {
   return (
     <aside className="sticky top-0 relative z-30 flex h-screen w-64 shrink-0 flex-col self-start border-r border-panel-active bg-panel">
 
-      <nav aria-label="Menu principal" className="flex-1 space-y-1 p-2">
+      <nav aria-label="Menu principal" className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain p-2 pb-6">
         <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-panel-label">
           Principal
         </p>
