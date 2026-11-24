@@ -974,6 +974,32 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          colaborador_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          colaborador_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          colaborador_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores_importados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vagas: {
         Row: {
           cargo_id: string
@@ -1084,6 +1110,23 @@ export type Database = {
       }
       normalizar_nome_banco: { Args: { nome: string }; Returns: string }
       pode_gerir_banco_de_horas: { Args: never; Returns: boolean }
+      seguranca_administracao: { Args: never; Returns: boolean }
+      seguranca_le_registro_pessoal: {
+        Args: { email_alvo: string }
+        Returns: boolean
+      }
+      seguranca_membro_interno: { Args: never; Returns: boolean }
+      seguranca_pode_notificar: {
+        Args: {
+          destino: string
+          foto_ator: string
+          nome_ator: string
+          texto_aviso: string
+          tipo_aviso: string
+        }
+        Returns: boolean
+      }
+      seguranca_tem_papel: { Args: { papeis: string[] }; Returns: boolean }
       transferir_ouvidor: { Args: { destino_id: string }; Returns: undefined }
     }
     Enums: {

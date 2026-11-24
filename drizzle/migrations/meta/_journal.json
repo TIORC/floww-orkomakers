@@ -8,6 +8,13 @@
       "when": 1792672266470,
       "tag": "0000_feedbacks_comunicados_e_log_de_emails",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795553469329,
+      "tag": "0001_restrict_selected_permissive_access",
+      "breakpoints": true
     }
   ]
 }
