@@ -14,6 +14,206 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_eventos: {
+        Row: {
+          convidados: Json
+          created_at: string
+          criado_por: string
+          data_evento: string
+          descricao: string
+          hora_fim: string | null
+          hora_inicio: string | null
+          id: string
+          realizada: boolean
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          convidados?: Json
+          created_at?: string
+          criado_por: string
+          data_evento: string
+          descricao?: string
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          realizada?: boolean
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          convidados?: Json
+          created_at?: string
+          criado_por?: string
+          data_evento?: string
+          descricao?: string
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          realizada?: boolean
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      avisos: {
+        Row: {
+          criado_em: string
+          decidido_em: string | null
+          decidido_por_email: string | null
+          decidido_por_nome: string
+          gestor_email: string | null
+          id: string
+          motivo_recusa: string
+          payload: Json
+          setor: string
+          solicitante_email: string
+          solicitante_nome: string
+          status: string
+          tipo: string
+        }
+        Insert: {
+          criado_em?: string
+          decidido_em?: string | null
+          decidido_por_email?: string | null
+          decidido_por_nome?: string
+          gestor_email?: string | null
+          id?: string
+          motivo_recusa?: string
+          payload?: Json
+          setor?: string
+          solicitante_email: string
+          solicitante_nome?: string
+          status?: string
+          tipo: string
+        }
+        Update: {
+          criado_em?: string
+          decidido_em?: string | null
+          decidido_por_email?: string | null
+          decidido_por_nome?: string
+          gestor_email?: string | null
+          id?: string
+          motivo_recusa?: string
+          payload?: Json
+          setor?: string
+          solicitante_email?: string
+          solicitante_nome?: string
+          status?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      banco_horas_dias: {
+        Row: {
+          atualizado_em: string
+          data: string
+          dia_semana: string
+          espelho_id: string
+          horas_compensar_min: number
+          horas_extras_min: number
+          horas_faltas_min: number
+          id: string
+          observacao: string
+          trabalhado_min: number
+          tratamento: string
+        }
+        Insert: {
+          atualizado_em?: string
+          data: string
+          dia_semana?: string
+          espelho_id: string
+          horas_compensar_min?: number
+          horas_extras_min?: number
+          horas_faltas_min?: number
+          id?: string
+          observacao?: string
+          trabalhado_min?: number
+          tratamento?: string
+        }
+        Update: {
+          atualizado_em?: string
+          data?: string
+          dia_semana?: string
+          espelho_id?: string
+          horas_compensar_min?: number
+          horas_extras_min?: number
+          horas_faltas_min?: number
+          id?: string
+          observacao?: string
+          trabalhado_min?: number
+          tratamento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banco_horas_dias_espelho_id_fkey"
+            columns: ["espelho_id"]
+            isOneToOne: false
+            referencedRelation: "banco_horas_espelhos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      banco_horas_espelhos: {
+        Row: {
+          atualizado_em: string
+          colaborador_cargo: string
+          colaborador_departamento: string
+          colaborador_nome: string
+          criado_em: string
+          horas_compensar_min: number
+          horas_extras_min: number
+          horas_faltas_min: number
+          horas_pagar_desc_min: number
+          horas_trabalhadas_min: number
+          id: string
+          importado_por: string
+          mes_referencia: string | null
+          observacao: string
+          periodo_fim: string
+          periodo_inicio: string
+          saldo_anterior_min: number | null
+        }
+        Insert: {
+          atualizado_em?: string
+          colaborador_cargo?: string
+          colaborador_departamento?: string
+          colaborador_nome: string
+          criado_em?: string
+          horas_compensar_min?: number
+          horas_extras_min?: number
+          horas_faltas_min?: number
+          horas_pagar_desc_min?: number
+          horas_trabalhadas_min?: number
+          id?: string
+          importado_por?: string
+          mes_referencia?: string | null
+          observacao?: string
+          periodo_fim: string
+          periodo_inicio: string
+          saldo_anterior_min?: number | null
+        }
+        Update: {
+          atualizado_em?: string
+          colaborador_cargo?: string
+          colaborador_departamento?: string
+          colaborador_nome?: string
+          criado_em?: string
+          horas_compensar_min?: number
+          horas_extras_min?: number
+          horas_faltas_min?: number
+          horas_pagar_desc_min?: number
+          horas_trabalhadas_min?: number
+          id?: string
+          importado_por?: string
+          mes_referencia?: string | null
+          observacao?: string
+          periodo_fim?: string
+          periodo_inicio?: string
+          saldo_anterior_min?: number | null
+        }
+        Relationships: []
+      }
       cargo_senioridades: {
         Row: {
           cargo_id: string
@@ -125,6 +325,7 @@ export type Database = {
           data_cadastro: string
           data_nascimento: string
           departamento: string
+          desativacao_ate: string | null
           desligamento: string
           email: string
           etnia: string
@@ -139,17 +340,17 @@ export type Database = {
           matricula: string
           motivo_desligamento: string
           motivo_desligamento_outros: string
-          observacao_desligamento: string
-          sublider_area: string
           nivel_acesso: string
           nome: string
           nome_completo: string
+          observacao_desligamento: string
           origem_cadastro: string
           ouvidor: boolean
           papel: string
           participa_gamificacao: string
           sexo: string
           situacao: string
+          sublider_area: string
           tipo_desligamento: string
           ultimo_acesso: string
           ultimo_dia_trabalhado: string
@@ -167,6 +368,7 @@ export type Database = {
           data_cadastro?: string
           data_nascimento?: string
           departamento?: string
+          desativacao_ate?: string | null
           desligamento?: string
           email: string
           etnia?: string
@@ -181,17 +383,17 @@ export type Database = {
           matricula?: string
           motivo_desligamento?: string
           motivo_desligamento_outros?: string
-          observacao_desligamento?: string
-          sublider_area?: string
           nivel_acesso?: string
           nome: string
           nome_completo: string
+          observacao_desligamento?: string
           origem_cadastro?: string
           ouvidor?: boolean
           papel?: string
           participa_gamificacao?: string
           sexo?: string
           situacao?: string
+          sublider_area?: string
           tipo_desligamento?: string
           ultimo_acesso?: string
           ultimo_dia_trabalhado?: string
@@ -209,6 +411,7 @@ export type Database = {
           data_cadastro?: string
           data_nascimento?: string
           departamento?: string
+          desativacao_ate?: string | null
           desligamento?: string
           email?: string
           etnia?: string
@@ -223,17 +426,17 @@ export type Database = {
           matricula?: string
           motivo_desligamento?: string
           motivo_desligamento_outros?: string
-          observacao_desligamento?: string
-          sublider_area?: string
           nivel_acesso?: string
           nome?: string
           nome_completo?: string
+          observacao_desligamento?: string
           origem_cadastro?: string
           ouvidor?: boolean
           papel?: string
           participa_gamificacao?: string
           sexo?: string
           situacao?: string
+          sublider_area?: string
           tipo_desligamento?: string
           ultimo_acesso?: string
           ultimo_dia_trabalhado?: string
@@ -273,135 +476,6 @@ export type Database = {
           titulo?: string
         }
         Relationships: []
-      }
-      reconhecimentos: {
-        Row: {
-          autor_email: string
-          autor_foto: string | null
-          autor_nome: string
-          cargo_promovido: string | null
-          criado_em: string
-          id: string
-          mensagem: string
-          tipo: string
-        }
-        Insert: {
-          autor_email: string
-          autor_foto?: string | null
-          autor_nome?: string
-          cargo_promovido?: string | null
-          criado_em?: string
-          id?: string
-          mensagem: string
-          tipo?: string
-        }
-        Update: {
-          autor_email?: string
-          autor_foto?: string | null
-          autor_nome?: string
-          cargo_promovido?: string | null
-          criado_em?: string
-          id?: string
-          mensagem?: string
-          tipo?: string
-        }
-        Relationships: []
-      }
-      reconhecimento_mencoes: {
-        Row: {
-          foto_url: string | null
-          id: string
-          reconhecimento_id: string
-          rotulo: string
-          tipo: string
-          valor: string
-        }
-        Insert: {
-          foto_url?: string | null
-          id?: string
-          reconhecimento_id: string
-          rotulo: string
-          tipo: string
-          valor: string
-        }
-        Update: {
-          foto_url?: string | null
-          id?: string
-          reconhecimento_id?: string
-          rotulo?: string
-          tipo?: string
-          valor?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "reconhecimento_mencoes_reconhecimento_id_fkey"
-            columns: ["reconhecimento_id"]
-            isOneToOne: false
-            referencedRelation: "reconhecimentos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      reconhecimento_curtidas: {
-        Row: {
-          colaborador_email: string
-          criado_em: string
-          reconhecimento_id: string
-        }
-        Insert: {
-          colaborador_email: string
-          criado_em?: string
-          reconhecimento_id: string
-        }
-        Update: {
-          colaborador_email?: string
-          criado_em?: string
-          reconhecimento_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "reconhecimento_curtidas_reconhecimento_id_fkey"
-            columns: ["reconhecimento_id"]
-            isOneToOne: false
-            referencedRelation: "reconhecimentos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      reconhecimento_comentarios: {
-        Row: {
-          autor_email: string
-          autor_nome: string
-          criado_em: string
-          id: string
-          reconhecimento_id: string
-          texto: string
-        }
-        Insert: {
-          autor_email: string
-          autor_nome?: string
-          criado_em?: string
-          id?: string
-          reconhecimento_id: string
-          texto: string
-        }
-        Update: {
-          autor_email?: string
-          autor_nome?: string
-          criado_em?: string
-          id?: string
-          reconhecimento_id?: string
-          texto?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "reconhecimento_comentarios_reconhecimento_id_fkey"
-            columns: ["reconhecimento_id"]
-            isOneToOne: false
-            referencedRelation: "reconhecimentos"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       email_envios: {
         Row: {
@@ -463,6 +537,72 @@ export type Database = {
         }
         Relationships: []
       }
+      feriados_cadastrados: {
+        Row: {
+          abrangencia: string
+          atualizado_em: string
+          criado_em: string
+          criado_por_email: string
+          data: string
+          id: string
+          nome: string
+          recorrente: boolean
+          tipo: string
+        }
+        Insert: {
+          abrangencia?: string
+          atualizado_em?: string
+          criado_em?: string
+          criado_por_email?: string
+          data: string
+          id?: string
+          nome: string
+          recorrente?: boolean
+          tipo: string
+        }
+        Update: {
+          abrangencia?: string
+          atualizado_em?: string
+          criado_em?: string
+          criado_por_email?: string
+          data?: string
+          id?: string
+          nome?: string
+          recorrente?: boolean
+          tipo?: string
+        }
+        Relationships: []
+      }
+      ferias_programadas: {
+        Row: {
+          colaborador_email: string
+          colaborador_nome: string
+          criado_em: string
+          fim: string
+          id: string
+          inicio: string
+          programado_por_email: string
+        }
+        Insert: {
+          colaborador_email: string
+          colaborador_nome?: string
+          criado_em?: string
+          fim: string
+          id?: string
+          inicio: string
+          programado_por_email: string
+        }
+        Update: {
+          colaborador_email?: string
+          colaborador_nome?: string
+          criado_em?: string
+          fim?: string
+          id?: string
+          inicio?: string
+          programado_por_email?: string
+        }
+        Relationships: []
+      }
       historico_ranking_mensal: {
         Row: {
           ano: number
@@ -513,6 +653,48 @@ export type Database = {
           },
         ]
       }
+      inventory_mobile_entries: {
+        Row: {
+          categoria_id: string | null
+          created_at: string
+          created_by: string
+          data: string
+          equipamento: string
+          es_text: string | null
+          id: string
+          patrimonio: string | null
+          status: string
+          ti_name: string
+          tipo: string
+        }
+        Insert: {
+          categoria_id?: string | null
+          created_at?: string
+          created_by?: string
+          data?: string
+          equipamento: string
+          es_text?: string | null
+          id?: string
+          patrimonio?: string | null
+          status?: string
+          ti_name: string
+          tipo: string
+        }
+        Update: {
+          categoria_id?: string | null
+          created_at?: string
+          created_by?: string
+          data?: string
+          equipamento?: string
+          es_text?: string | null
+          id?: string
+          patrimonio?: string | null
+          status?: string
+          ti_name?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       notificacoes: {
         Row: {
           ator_foto_url: string | null
@@ -542,6 +724,207 @@ export type Database = {
           id?: string
           lida?: boolean
           texto?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      ponto_batidas: {
+        Row: {
+          colaborador_email: string
+          colaborador_nome: string
+          criado_em: string
+          id: string
+          latitude: number
+          longitude: number
+          precisao: number | null
+          registrado_em: string
+        }
+        Insert: {
+          colaborador_email: string
+          colaborador_nome?: string
+          criado_em?: string
+          id?: string
+          latitude: number
+          longitude: number
+          precisao?: number | null
+          registrado_em?: string
+        }
+        Update: {
+          colaborador_email?: string
+          colaborador_nome?: string
+          criado_em?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          precisao?: number | null
+          registrado_em?: string
+        }
+        Relationships: []
+      }
+      ponto_solicitacoes: {
+        Row: {
+          criado_em: string
+          data: string
+          entrada: string | null
+          id: string
+          motivo: string
+          saida: string | null
+          solicitante_email: string
+          solicitante_nome: string
+          status: string
+          tipo: string
+        }
+        Insert: {
+          criado_em?: string
+          data: string
+          entrada?: string | null
+          id?: string
+          motivo?: string
+          saida?: string | null
+          solicitante_email: string
+          solicitante_nome?: string
+          status?: string
+          tipo: string
+        }
+        Update: {
+          criado_em?: string
+          data?: string
+          entrada?: string | null
+          id?: string
+          motivo?: string
+          saida?: string | null
+          solicitante_email?: string
+          solicitante_nome?: string
+          status?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      reconhecimento_comentarios: {
+        Row: {
+          autor_email: string
+          autor_nome: string
+          criado_em: string
+          id: string
+          reconhecimento_id: string
+          texto: string
+        }
+        Insert: {
+          autor_email: string
+          autor_nome?: string
+          criado_em?: string
+          id?: string
+          reconhecimento_id: string
+          texto: string
+        }
+        Update: {
+          autor_email?: string
+          autor_nome?: string
+          criado_em?: string
+          id?: string
+          reconhecimento_id?: string
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconhecimento_comentarios_reconhecimento_id_fkey"
+            columns: ["reconhecimento_id"]
+            isOneToOne: false
+            referencedRelation: "reconhecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reconhecimento_curtidas: {
+        Row: {
+          colaborador_email: string
+          criado_em: string
+          reconhecimento_id: string
+        }
+        Insert: {
+          colaborador_email: string
+          criado_em?: string
+          reconhecimento_id: string
+        }
+        Update: {
+          colaborador_email?: string
+          criado_em?: string
+          reconhecimento_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconhecimento_curtidas_reconhecimento_id_fkey"
+            columns: ["reconhecimento_id"]
+            isOneToOne: false
+            referencedRelation: "reconhecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reconhecimento_mencoes: {
+        Row: {
+          foto_url: string | null
+          id: string
+          reconhecimento_id: string
+          rotulo: string
+          tipo: string
+          valor: string
+        }
+        Insert: {
+          foto_url?: string | null
+          id?: string
+          reconhecimento_id: string
+          rotulo: string
+          tipo: string
+          valor: string
+        }
+        Update: {
+          foto_url?: string | null
+          id?: string
+          reconhecimento_id?: string
+          rotulo?: string
+          tipo?: string
+          valor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconhecimento_mencoes_reconhecimento_id_fkey"
+            columns: ["reconhecimento_id"]
+            isOneToOne: false
+            referencedRelation: "reconhecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reconhecimentos: {
+        Row: {
+          autor_email: string
+          autor_foto: string | null
+          autor_nome: string
+          cargo_promovido: string | null
+          criado_em: string
+          id: string
+          mensagem: string
+          tipo: string
+        }
+        Insert: {
+          autor_email: string
+          autor_foto?: string | null
+          autor_nome?: string
+          cargo_promovido?: string | null
+          criado_em?: string
+          id?: string
+          mensagem: string
+          tipo?: string
+        }
+        Update: {
+          autor_email?: string
+          autor_foto?: string | null
+          autor_nome?: string
+          cargo_promovido?: string | null
+          criado_em?: string
+          id?: string
+          mensagem?: string
           tipo?: string
         }
         Relationships: []
@@ -596,6 +979,7 @@ export type Database = {
           cargo_id: string
           criado_em: string
           criado_por: string | null
+          detalhes: Json
           id: string
           setor: string
           status: string
@@ -605,6 +989,7 @@ export type Database = {
           cargo_id: string
           criado_em?: string
           criado_por?: string | null
+          detalhes?: Json
           id?: string
           setor: string
           status?: string
@@ -614,6 +999,7 @@ export type Database = {
           cargo_id?: string
           criado_em?: string
           criado_por?: string | null
+          detalhes?: Json
           id?: string
           setor?: string
           status?: string
@@ -634,6 +1020,70 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      criar_agenda_evento: {
+        Args: {
+          convidados?: Json
+          data_evento: string
+          descricao?: string
+          email_caller: string
+          hora_fim?: string
+          hora_inicio?: string
+          titulo: string
+        }
+        Returns: {
+          convidados: Json
+          created_at: string
+          criado_por: string
+          data_evento: string
+          descricao: string
+          hora_fim: string | null
+          hora_inicio: string | null
+          id: string
+          realizada: boolean
+          titulo: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "agenda_eventos"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      eh_gestao_ou_administracao: { Args: never; Returns: boolean }
+      eh_rh_ou_administracao: { Args: never; Returns: boolean }
+      excluir_agenda_evento: {
+        Args: { email_caller: string; evento_id: string }
+        Returns: undefined
+      }
+      listar_agenda_eventos: {
+        Args: { email_caller: string }
+        Returns: {
+          convidados: Json
+          created_at: string
+          criado_por: string
+          data_evento: string
+          descricao: string
+          hora_fim: string | null
+          hora_inicio: string | null
+          id: string
+          realizada: boolean
+          titulo: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "agenda_eventos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      marcar_agenda_evento_realizada: {
+        Args: { email_caller: string; evento_id: string; marcar: boolean }
+        Returns: undefined
+      }
+      normalizar_nome_banco: { Args: { nome: string }; Returns: string }
+      pode_gerir_banco_de_horas: { Args: never; Returns: boolean }
       transferir_ouvidor: { Args: { destino_id: string }; Returns: undefined }
     }
     Enums: {
