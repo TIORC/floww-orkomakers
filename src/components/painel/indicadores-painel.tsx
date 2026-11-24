@@ -5,16 +5,17 @@ import { Award, CodeXml, Flame, TrendingUp, type LucideIcon } from "lucide-react
 import { cn } from "@/lib/utils";
 import { useUsuarioLogado } from "@/hooks/use-usuario-logado";
 import { contarReconhecimentosTrimestre, trimestreAtual } from "@/lib/reconhecimentos";
+import { COMPETENCIAS_FEEDBACK, buscarPercentuaisFeedbacks } from "@/lib/feedbacks";
 import { CardAcessosDiarios } from "@/components/painel/card-acessos-diarios";
 
 const CARD = "flex h-[230px] w-[280px] shrink-0 flex-col rounded-2xl border border-border bg-card p-5";
 
-const COMPETENCIAS = [
-  { id: "proatividade-autonomia", rotulo: "Proatividade e Autonomia", valor: 70, cor: "bg-destructive" },
-  { id: "confiabilidade-transparencia", rotulo: "Confiabilidade e Transparência", valor: 50, cor: "bg-emerald-500" },
-  { id: "encantamento-cliente", rotulo: "Encantamento e Foco no Cliente", valor: 20, cor: "bg-brand" },
-  { id: "responsabilidade-produtividade", rotulo: "Responsabilidade e Produtividade", valor: 60, cor: "bg-blue-600" },
-] as const;
+const COR_COMPETENCIA: Record<(typeof COMPETENCIAS_FEEDBACK)[number]["id"], string> = {
+  "proatividade-autonomia": "bg-destructive",
+  "confiabilidade-transparencia": "bg-emerald-500",
+  "encantamento-cliente": "bg-brand",
+  "responsabilidade-produtividade": "bg-blue-600",
+};
 
 const TITULO_ATIVIDADES = "atividades-painel-titulo";
 
@@ -122,18 +123,39 @@ function BarraProgresso({ rotulo, valor, cor }: { rotulo: string; valor: number;
   );
 }
 
+// Média geral de todos os feedbacks recebidos pelo colaborador logado (escala 0–5 convertida em %).
 function CardConstancia() {
+  const { data: usuario } = useUsuarioLogado();
+  const { data: percentuais, isError } = useQuery({
+    queryKey: ["feedbacks-percentuais", usuario?.email ?? ""],
+    queryFn: () => buscarPercentuaisFeedbacks(usuario?.email ?? ""),
+    enabled: Boolean(usuario?.email),
+  });
+
   return (
     <article className={CARD}>
       <div className="flex items-center gap-3">
         <Flame className="size-7 shrink-0 text-brand" aria-hidden />
       </div>
       <h3 className="mt-2 text-sm font-semibold text-muted-foreground">Constância</h3>
-      <div className="mt-3 flex flex-col gap-2.5">
-        {COMPETENCIAS.map((competencia) => (
-          <BarraProgresso key={competencia.id} rotulo={competencia.rotulo} valor={competencia.valor} cor={competencia.cor} />
-        ))}
-      </div>
+      {isError ? (
+        <div className="mt-auto">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+            Dados indisponíveis
+          </span>
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-col gap-2.5">
+          {(percentuais ?? COMPETENCIAS_FEEDBACK.map((c) => ({ id: c.id, rotulo: c.rotulo, valor: 0 }))).map((competencia) => (
+            <BarraProgresso
+              key={competencia.id}
+              rotulo={competencia.rotulo}
+              valor={competencia.valor}
+              cor={COR_COMPETENCIA[competencia.id]}
+            />
+          ))}
+        </div>
+      )}
     </article>
   );
 }

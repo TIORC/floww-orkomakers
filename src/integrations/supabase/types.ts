@@ -518,6 +518,10 @@ export type Database = {
           destinatario_email: string
           id: string
           mensagem: string
+          nota_confiabilidade_transparencia: number | null
+          nota_encantamento_cliente: number | null
+          nota_proatividade_autonomia: number | null
+          nota_responsabilidade_produtividade: number | null
         }
         Insert: {
           autor_email: string
@@ -526,6 +530,10 @@ export type Database = {
           destinatario_email: string
           id?: string
           mensagem: string
+          nota_confiabilidade_transparencia?: number | null
+          nota_encantamento_cliente?: number | null
+          nota_proatividade_autonomia?: number | null
+          nota_responsabilidade_produtividade?: number | null
         }
         Update: {
           autor_email?: string
@@ -534,6 +542,10 @@ export type Database = {
           destinatario_email?: string
           id?: string
           mensagem?: string
+          nota_confiabilidade_transparencia?: number | null
+          nota_encantamento_cliente?: number | null
+          nota_proatividade_autonomia?: number | null
+          nota_responsabilidade_produtividade?: number | null
         }
         Relationships: []
       }

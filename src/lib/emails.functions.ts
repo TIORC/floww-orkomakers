@@ -11,13 +11,33 @@ const ROTULO_EMOCAO: Record<string, string> = { triste: "Triste", muito_triste: 
 export const criarFeedback = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z.object({ destinatarioEmail: z.string().trim().max(255), mensagem: z.string().trim().min(1).max(5000) }).parse(d),
+    z
+      .object({
+        destinatarioEmail: z.string().trim().max(255),
+        mensagem: z.string().trim().min(1).max(5000),
+        notas: z.object({
+          proatividadeAutonomia: z.number().int().min(0).max(5),
+          confiabilidadeTransparencia: z.number().int().min(0).max(5),
+          encantamentoCliente: z.number().int().min(0).max(5),
+          responsabilidadeProdutividade: z.number().int().min(0).max(5),
+        }),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const autorEmail = (context.claims as { email?: string }).email ?? "";
     const { data: fb, error } = await context.supabase
       .from("feedbacks")
-      .insert({ autor_id: context.userId, autor_email: autorEmail, destinatario_email: data.destinatarioEmail, mensagem: data.mensagem })
+      .insert({
+        autor_id: context.userId,
+        autor_email: autorEmail,
+        destinatario_email: data.destinatarioEmail,
+        mensagem: data.mensagem,
+        nota_proatividade_autonomia: data.notas.proatividadeAutonomia,
+        nota_confiabilidade_transparencia: data.notas.confiabilidadeTransparencia,
+        nota_encantamento_cliente: data.notas.encantamentoCliente,
+        nota_responsabilidade_produtividade: data.notas.responsabilidadeProdutividade,
+      })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
