@@ -98,7 +98,7 @@ function Feedbacks() {
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
       <EnviarFeedbackDialog aberto={feedbackAberto} onFechar={() => setFeedbackAberto(false)} />
-      <main className="min-w-0 flex-1 space-y-6 px-10 pb-10 pt-24">
+      <main className="min-w-0 flex-1 space-y-6 px-4 pb-10 pt-24 sm:px-6 lg:px-10">
         <Card className="border-panel-active bg-panel text-white">
           <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4">
             <div>

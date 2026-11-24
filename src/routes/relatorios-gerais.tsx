@@ -133,7 +133,7 @@ function RelatoriosGeraisPage() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
-      <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
+      <main className="min-w-0 flex-1 px-4 pb-10 pt-24 sm:px-6 lg:px-10">
         <div className="mb-8">
           <p className="text-sm text-white/80">Relatórios e Pesquisas</p>
           <h1 className="mt-1 font-display text-3xl font-bold tracking-tight text-white">Relatórios Gerais</h1>

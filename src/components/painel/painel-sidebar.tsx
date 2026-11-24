@@ -23,6 +23,7 @@ import {
   History,
   Hourglass,
   Megaphone,
+  Menu,
   MessageSquareText,
   Settings,
   ShieldAlert,
@@ -293,11 +294,40 @@ export function PainelSidebar() {
   const { data: usuario } = useUsuarioLogado();
   const mostrarRH = podeVerMenuRH(usuario);
   useRegistrarPresenca();
+  // Abaixo de `lg` o menu vira uma gaveta: começa fechada e fecha ao trocar de página.
+  const [aberto, setAberto] = useState(false);
+  useEffect(() => {
+    setAberto(false);
+  }, [caminho]);
 
   return (
-    <aside className="sticky top-0 relative z-30 flex h-screen w-64 shrink-0 flex-col self-start border-r border-panel-active bg-panel">
+    <>
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        aria-label="Abrir menu"
+        aria-expanded={aberto}
+        className="fixed left-3 top-3 z-40 flex size-10 items-center justify-center rounded-lg border border-panel-active bg-panel text-white shadow lg:hidden"
+      >
+        <Menu className="size-5" aria-hidden />
+      </button>
+      {aberto && (
+        <div aria-hidden onClick={() => setAberto(false)} className="fixed inset-0 z-[45] bg-black/60 lg:hidden" />
+      )}
 
-      <nav aria-label="Menu principal" className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain p-2 pb-6">
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 max-w-[85vw] shrink-0 flex-col border-r border-panel-active bg-panel transition-transform duration-200 lg:sticky lg:top-0 lg:z-30 lg:max-w-none lg:translate-x-0 lg:self-start ${
+          aberto ? "translate-x-0" : "invisible -translate-x-full lg:visible"
+        }`}
+      >
+
+      <nav
+        aria-label="Menu principal"
+        onClick={(evento) => {
+          if ((evento.target as HTMLElement).closest("a")) setAberto(false);
+        }}
+        className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain p-2 pb-6"
+      >
         <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-panel-label">
           Principal
         </p>
@@ -351,6 +381,7 @@ export function PainelSidebar() {
         </ul>
       </nav>
 
-    </aside>
+      </aside>
+    </>
   );
 }

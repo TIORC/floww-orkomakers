@@ -32,7 +32,7 @@ export const Route = createFileRoute("/cadastro-desligamento")({
 const COLUNAS = ["Nome", "Cargo", "Setor", "Gestor Direto", "Unidade", "Situação"];
 const CHAVE_COLABORADORES = ["colaboradores-importados"];
 const CAMPO_FILTRO =
-  "h-11 rounded-lg border border-panel-active bg-background px-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-brand";
+  "h-11 w-full min-w-0 rounded-lg border border-panel-active bg-background px-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-brand";
 
 // Bolinha com a foto; sem foto, mostra as iniciais do nome.
 function Avatar({ nome, fotoUrl }: { nome: string; fotoUrl: string }) {
@@ -112,11 +112,11 @@ function CadastroDesligamentoPage() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
-      <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
+      <main className="min-w-0 flex-1 px-4 pb-10 pt-24 sm:px-6 lg:px-10">
         <section className="rounded-2xl border border-panel-active bg-panel p-6 sm:p-8">
           <header className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h1 className="font-display text-3xl font-semibold text-white">Cadastro e Desligamento</h1>
+              <h1 className="font-display text-2xl font-semibold text-white sm:text-3xl">Cadastro e Desligamento</h1>
               <p className="mt-2 text-sm text-white/80">
                 Consulte os colaboradores com setor, gestor direto e unidade.
               </p>
@@ -141,8 +141,8 @@ function CadastroDesligamentoPage() {
             </div>
           </header>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <label className="relative block w-full max-w-xl">
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(16rem,2fr)_repeat(3,minmax(0,1fr))_auto]">
+            <label className="relative block w-full sm:col-span-2 xl:col-span-1">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/60" aria-hidden />
               <input
                 type="search"
@@ -201,20 +201,22 @@ function CadastroDesligamentoPage() {
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              onClick={() => setDesligadosAberto(true)}
-              className="h-11 rounded-lg bg-red-900 px-4 text-sm font-semibold text-white shadow transition hover:bg-red-800"
-            >
-              Desligados
-            </button>
-            <button
-              type="button"
-              onClick={() => setDesativadosAberto(true)}
-              className="h-11 rounded-lg bg-orange-600 px-4 text-sm font-semibold text-white shadow transition hover:bg-orange-500"
-            >
-              Desativados
-            </button>
+            <div className="flex gap-3 sm:col-span-2 xl:col-span-1">
+              <button
+                type="button"
+                onClick={() => setDesligadosAberto(true)}
+                className="h-11 flex-1 whitespace-nowrap rounded-lg bg-red-900 px-4 text-sm font-semibold text-white shadow transition hover:bg-red-800"
+              >
+                Desligados
+              </button>
+              <button
+                type="button"
+                onClick={() => setDesativadosAberto(true)}
+                className="h-11 flex-1 whitespace-nowrap rounded-lg bg-orange-600 px-4 text-sm font-semibold text-white shadow transition hover:bg-orange-500"
+              >
+                Desativados
+              </button>
+            </div>
           </div>
 
           <div className="mt-6 overflow-x-auto rounded-xl border border-panel-active">

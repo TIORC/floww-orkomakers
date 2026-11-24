@@ -34,7 +34,7 @@ function Avaliacoes() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
-      <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
+      <main className="min-w-0 flex-1 px-4 pb-10 pt-24 sm:px-6 lg:px-10">
         <h1 className="font-display text-2xl font-bold text-foreground">Avaliações de desempenho</h1>
         <p className="mt-1 text-sm text-panel-text">
           Aqui estão as avaliações de desempenho criadas na sua empresa onde você pode realizar a sua autoavaliação ou

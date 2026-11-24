@@ -242,7 +242,7 @@ function CargosSalariosPage() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
-      <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
+      <main className="min-w-0 flex-1 px-4 pb-10 pt-24 sm:px-6 lg:px-10">
         <section className="rounded-2xl border border-panel-active bg-panel p-6 sm:p-8">
           <header className="flex flex-wrap items-start justify-between gap-4">
             <div>

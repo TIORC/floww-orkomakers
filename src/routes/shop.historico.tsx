@@ -44,7 +44,7 @@ function HistoricoPage() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
-      <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
+      <main className="min-w-0 flex-1 px-4 pb-10 pt-24 sm:px-6 lg:px-10">
         <section className="rounded-2xl border border-panel-active bg-panel p-6 sm:p-8">
           <header>
             <h1 className="font-display text-3xl font-semibold text-white">Histórico de Transações</h1>

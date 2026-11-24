@@ -87,7 +87,7 @@ function ProcessosPage() {
     toast.success(`Processo seletivo aberto para ${novo.cargo}.`);
   };
 
-  return <div className="flex min-h-screen w-full bg-background"><PainelSidebar /><main className="min-w-0 flex-1 px-10 pb-10 pt-24">
+  return <div className="flex min-h-screen w-full bg-background"><PainelSidebar /><main className="min-w-0 flex-1 px-4 pb-10 pt-24 sm:px-6 lg:px-10">
     <Card className="min-h-[34rem] rounded-2xl shadow-sm"><CardContent className="p-6 sm:p-8">
       {vagaSelecionada ? <>
         <div className="mb-7 flex flex-wrap items-start justify-between gap-4">

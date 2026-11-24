@@ -59,7 +59,7 @@ function PlanosDesenvolvimento() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
-      <main className="min-w-0 flex-1 space-y-6 px-10 pb-10 pt-24">
+      <main className="min-w-0 flex-1 space-y-6 px-4 pb-10 pt-24 sm:px-6 lg:px-10">
         <section className="rounded-2xl border border-panel-active bg-panel p-6">
           <h1 className="font-display text-xl font-semibold text-white">Meu Desenvolvimento</h1>
         </section>

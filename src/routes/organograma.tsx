@@ -123,7 +123,7 @@ function OrganogramaPage() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
-      <main className="flex min-w-0 flex-1 flex-col px-10 pb-10 pt-24">
+      <main className="flex min-w-0 flex-1 flex-col px-4 pb-10 pt-24 sm:px-6 lg:px-10">
         <section className="flex flex-1 flex-col rounded-2xl border border-panel-active bg-panel p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="font-display text-2xl font-semibold text-white">Organograma</h1>

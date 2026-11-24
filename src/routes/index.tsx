@@ -95,7 +95,7 @@ function Index() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
-      <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
+      <main className="min-w-0 flex-1 px-4 pb-10 pt-24 sm:px-6 lg:px-10">
         <div
           className="relative -left-6 mt-8 ml-auto w-full"
           onClick={(evento) => {

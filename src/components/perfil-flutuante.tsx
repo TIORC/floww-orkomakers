@@ -62,9 +62,9 @@ export function PerfilFlutuante() {
       initial={{ opacity: 0, y: -16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 260, damping: 26 }}
-      className="fixed left-64 right-0 top-0 z-40 flex h-16 items-center justify-end gap-5 bg-background/70 px-6 backdrop-blur-md"
+      className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-end gap-3 bg-background/70 pl-16 pr-3 backdrop-blur-md sm:gap-5 sm:px-6 lg:left-64 lg:pl-6"
     >
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
         {/* Pill de ponto: ainda sem ação, a funcionalidade vem depois. */}
         <motion.button
           type="button"
@@ -72,25 +72,27 @@ export function PerfilFlutuante() {
           whileHover={{ y: -2, scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 18 }}
-          className="min-w-36 rounded-full bg-yellow-400 px-8 py-2 text-sm font-bold text-black transition-colors hover:bg-yellow-300 focus-visible:outline-none"
+          className="shrink-0 rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-black transition-colors hover:bg-yellow-300 focus-visible:outline-none sm:min-w-36 sm:px-8"
         >
           Bater Ponto
         </motion.button>
-        {ACOES_RAPIDAS.map(({ rotulo, icone: Icone, to }) => (
-          <motion.button
-            key={rotulo}
-            type="button"
-            aria-label={rotulo}
-            title={rotulo}
-            onClick={() => irPara(to)}
-            whileHover={{ y: -2, scale: 1.15 }}
-            whileTap={{ scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 400, damping: 18 }}
-            className="rounded-full p-1.5 text-panel-label transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-          >
-            <Icone className="size-5" aria-hidden />
-          </motion.button>
-        ))}
+        <div className="hidden items-center gap-4 md:flex">
+          {ACOES_RAPIDAS.map(({ rotulo, icone: Icone, to }) => (
+            <motion.button
+              key={rotulo}
+              type="button"
+              aria-label={rotulo}
+              title={rotulo}
+              onClick={() => irPara(to)}
+              whileHover={{ y: -2, scale: 1.15 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 400, damping: 18 }}
+              className="rounded-full p-1.5 text-panel-label transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <Icone className="size-5" aria-hidden />
+            </motion.button>
+          ))}
+        </div>
         <NotificacoesPainel />
       </div>
       <ModalBaterPonto aberto={pontoAberto} aoMudarAberto={setPontoAberto} />
@@ -103,7 +105,7 @@ export function PerfilFlutuante() {
               <User className="size-5" aria-hidden />
             )}
           </span>
-          <div className="min-w-0 text-left leading-tight">
+          <div className="hidden min-w-0 text-left leading-tight sm:block">
             <p className="truncate text-sm font-semibold text-white">{isPending ? "" : usuario?.nomeCompleto ?? "Sem usuário"}</p>
             <p className="truncate text-[0.65rem] font-semibold uppercase tracking-wide text-brand">{isPending ? "" : usuario?.setor ?? ""}</p>
           </div>

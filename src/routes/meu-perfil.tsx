@@ -183,7 +183,7 @@ function MeuPerfilPage() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
-      <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
+      <main className="min-w-0 flex-1 px-4 pb-10 pt-24 sm:px-6 lg:px-10">
         <div className="grid gap-6 lg:grid-cols-[18rem_1fr] lg:items-start">
           <aside className="rounded-2xl border border-panel-active bg-panel p-6 text-center">
             <label className="group relative mx-auto block size-32 cursor-pointer rounded-full">

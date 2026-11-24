@@ -55,6 +55,17 @@ function dataExibida(feriado: FeriadoCadastrado) {
     : dataBr(feriado.data);
 }
 
+// Mensagem legível do erro do banco. O Supabase devolve um objeto com message/hint/code, que nem sempre é um Error.
+function mensagemDoErro(erro: unknown, padrao: string) {
+  console.error("[feriados]", erro);
+  if (erro instanceof Error && erro.message) return erro.message;
+  if (erro && typeof erro === "object") {
+    const { message, hint } = erro as { message?: unknown; hint?: unknown };
+    if (typeof message === "string" && message) return typeof hint === "string" && hint ? `${message} (${hint})` : message;
+  }
+  return padrao;
+}
+
 function FeriadosPage() {
   const { data: usuario, isPending: carregandoUsuario } = useUsuarioLogado();
   const queryClient = useQueryClient();
@@ -127,7 +138,7 @@ function FeriadosPage() {
       toast.success(editandoId ? "Feriado alterado." : "Feriado cadastrado.");
       limparFormulario();
     } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar o feriado.");
+      toast.error(mensagemDoErro(erro, "Não foi possível salvar o feriado."));
     } finally {
       setSalvando(false);
     }
@@ -143,7 +154,7 @@ function FeriadosPage() {
       if (editandoId === feriado.id) limparFormulario();
       toast.success("Feriado removido.");
     } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Não foi possível remover o feriado.");
+      toast.error(mensagemDoErro(erro, "Não foi possível remover o feriado."));
     }
   }
 
@@ -151,7 +162,7 @@ function FeriadosPage() {
     return (
       <div className="flex min-h-screen w-full bg-background">
         <PainelSidebar />
-        <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
+        <main className="min-w-0 flex-1 px-4 pb-10 pt-24 sm:px-6 lg:px-10">
           <h1 className="font-display text-3xl font-semibold text-white">Feriados</h1>
           <p className="mt-4 text-sm text-white/80">Você não tem acesso a esta página.</p>
         </main>
@@ -162,7 +173,7 @@ function FeriadosPage() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <PainelSidebar />
-      <main className="min-w-0 flex-1 px-10 pb-10 pt-24">
+      <main className="min-w-0 flex-1 px-4 pb-10 pt-24 sm:px-6 lg:px-10">
         <header>
           <h1 className="font-display text-3xl font-semibold text-white">Feriados</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/80">
