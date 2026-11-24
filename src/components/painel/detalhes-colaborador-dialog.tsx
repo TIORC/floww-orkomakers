@@ -124,10 +124,12 @@ function formularioInicial(registro: RegistroColaborador): CamposEditaveis {
 export function DetalhesColaboradorDialog({
   identificador,
   podeGerenciar,
+  podeDesligar,
   onFechar,
 }: {
   identificador: IdentificadorColaborador | null;
   podeGerenciar: boolean;
+  podeDesligar: boolean;
   onFechar: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -715,7 +717,7 @@ export function DetalhesColaboradorDialog({
               />
             </div>
 
-            {!editando && podeGerenciar && confirmandoDesativacao && (
+            {!editando && podeDesligar && confirmandoDesativacao && (
               <div className="mt-8 grid gap-5 border-t border-panel-active pt-5 sm:grid-cols-2">
                 <h3 className="text-base font-semibold text-white sm:col-span-2">
                   Motivo da desativação
@@ -839,7 +841,7 @@ export function DetalhesColaboradorDialog({
                         </AnimatePresence>
                       </motion.button>
                     )}
-                    {!desligado && !desativado && (
+                    {podeDesligar && !desligado && !desativado && (
                       <button
                         type="button"
                         onClick={() => setConfirmandoDesativacao(true)}
@@ -849,7 +851,7 @@ export function DetalhesColaboradorDialog({
                         Desativar
                       </button>
                     )}
-                    {desativado && (
+                    {podeDesligar && desativado && (
                       <button
                         type="button"
                         onClick={reativarAfastado}
@@ -860,7 +862,7 @@ export function DetalhesColaboradorDialog({
                         Reativar
                       </button>
                     )}
-                    {desligado && (
+                    {podeDesligar && desligado && (
                       <button
                         type="button"
                         onClick={retornarColaborador}
@@ -871,7 +873,7 @@ export function DetalhesColaboradorDialog({
                         Retornar Colaborador
                       </button>
                     )}
-                    {!desligado && (
+                    {podeDesligar && !desligado && (
                       <button
                         type="button"
                         onClick={abrirDesligamento}
@@ -897,7 +899,7 @@ export function DetalhesColaboradorDialog({
         )}
       </div>
 
-      {!editando && podeGerenciar && confirmandoDesligamento && (
+      {!editando && podeDesligar && confirmandoDesligamento && (
         <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/60 p-4">
           <div
             role="dialog"

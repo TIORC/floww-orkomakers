@@ -7,7 +7,11 @@ import {
   DetalhesColaboradorDialog,
   type IdentificadorColaborador,
 } from "@/components/painel/detalhes-colaborador-dialog";
-import { useUsuarioLogado, podeGerenciarColaboradores } from "@/hooks/use-usuario-logado";
+import {
+  useUsuarioLogado,
+  podeDesligarColaboradores,
+  podeGerenciarColaboradores,
+} from "@/hooks/use-usuario-logado";
 import {
   COLABORADORES_POR_PAGINA,
   listarColaboradoresImportados,
@@ -65,6 +69,7 @@ function CadastroDesligamentoPage() {
   const [detalhe, setDetalhe] = useState<IdentificadorColaborador | null>(null);
   const { data: usuario } = useUsuarioLogado();
   const podeGerenciar = podeGerenciarColaboradores(usuario);
+  const podeDesligar = podeDesligarColaboradores(usuario);
 
   // Espera a pessoa parar de digitar antes de consultar o banco.
   useEffect(() => {
@@ -354,6 +359,7 @@ function CadastroDesligamentoPage() {
       <DetalhesColaboradorDialog
         identificador={detalhe}
         podeGerenciar={podeGerenciar}
+        podeDesligar={podeDesligar}
         onFechar={() => setDetalhe(null)}
       />
     </div>

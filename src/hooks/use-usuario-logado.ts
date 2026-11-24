@@ -28,13 +28,33 @@ export function podeTransferirOuvidor(usuario: UsuarioLogado | null | undefined)
 // Perfis que podem ler, editar e desligar colaboradores: Desenvolvedor do Sistema ou Administrador.
 const REGRA_PERFIL_GESTAO = /desenvolvedor do sistema|administrador/i;
 
-// Quem pode gerenciar colaboradores: conta master ou cargo de Desenvolvedor do Sistema / Administrador.
+// Quem pode gerenciar colaboradores (desligar, desativar, editar): conta master, papel de acesso
+// Desenvolvedor do Sistema / Administrador, ou cargo com esses nomes (regra antiga, mantida).
 export function podeGerenciarColaboradores(usuario: UsuarioLogado | null | undefined) {
   if (!usuario) return false;
   return (
     usuario.acessoMaster ||
+    usuario.nivelAcesso === "desenvolvedor" ||
+    usuario.nivelAcesso === "administrador" ||
     REGRA_PERFIL_GESTAO.test(usuario.cargoVisivel) ||
     REGRA_PERFIL_GESTAO.test(usuario.cargo)
+  );
+}
+
+// Nomes (sem acento, minúsculos) de quem pode desligar e desativar colaboradores, além da conta master.
+const NOMES_PODE_DESLIGAR = ["cleo barros", "yasmin pires"];
+
+function normalizarNome(valor: string) {
+  return valor.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
+// Desligar e desativar (e reverter essas situações): só a conta master (TI Maracas), a Yasmin e a Cléo.
+export function podeDesligarColaboradores(usuario: UsuarioLogado | null | undefined) {
+  if (!usuario) return false;
+  return (
+    usuario.acessoMaster ||
+    NOMES_PODE_DESLIGAR.includes(normalizarNome(usuario.nomeCompleto)) ||
+    NOMES_PODE_DESLIGAR.includes(normalizarNome(usuario.nome))
   );
 }
 

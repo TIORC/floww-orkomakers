@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 
 import {
+  podeDesligarColaboradores,
+  podeGerenciarColaboradores,
   podeVerProgramacaoFerias,
   podeVerTodosOsSetores,
   type UsuarioLogado,
@@ -20,6 +22,45 @@ const com = (nivelAcesso: string, acessoMaster = false): UsuarioLogado => ({
   cargo: "",
   cargoVisivel: "",
   gestorDiretoEmail: "",
+});
+
+describe("desligar e desativar colaboradores", () => {
+  const pessoa = (nome: string, nivel: string, acessoMaster = false): UsuarioLogado => ({
+    ...com(nivel, acessoMaster),
+    nome,
+    nomeCompleto: nome,
+  });
+
+  it("só TI Maracas (conta master), Cléo e Yasmin podem", () => {
+    expect(podeDesligarColaboradores(pessoa("TI Maracas", "desenvolvedor", true))).toBe(true);
+    expect(podeDesligarColaboradores(pessoa("Cléo Barros", "administrador"))).toBe(true);
+    expect(podeDesligarColaboradores(pessoa("Yasmin Pires", "administrador"))).toBe(true);
+  });
+
+  it("Celso e Jacson, mesmo sendo administradores, não podem", () => {
+    expect(podeDesligarColaboradores(pessoa("Celso Alcantara", "administrador"))).toBe(false);
+    expect(podeDesligarColaboradores(pessoa("Jacson Mascarenhas", "administrador"))).toBe(false);
+  });
+
+  it("cargo com a palavra Administrador não dá acesso", () => {
+    const cargoAdmin = { ...pessoa("Fulano", "colaborador"), cargo: "Administrador", cargoVisivel: "Administrador" };
+    expect(podeDesligarColaboradores(cargoAdmin)).toBe(false);
+    expect(podeDesligarColaboradores(null)).toBe(false);
+  });
+});
+
+describe("gerenciar colaboradores (desligar / desativar)", () => {
+  it("Administrador e Desenvolvedor podem gerenciar, mesmo com cargo sem essas palavras", () => {
+    expect(podeGerenciarColaboradores(com("administrador"))).toBe(true);
+    expect(podeGerenciarColaboradores(com("desenvolvedor"))).toBe(true);
+  });
+
+  it("Gestor, Colaborador e Visitante não gerenciam", () => {
+    for (const nivel of ["gestor", "colaborador", "convidado"]) {
+      expect(podeGerenciarColaboradores(com(nivel))).toBe(false);
+    }
+    expect(podeGerenciarColaboradores(null)).toBe(false);
+  });
 });
 
 describe("acesso à Programação de Férias", () => {
